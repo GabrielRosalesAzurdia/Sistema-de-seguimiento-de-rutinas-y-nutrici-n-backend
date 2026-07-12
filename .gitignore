@@ -1,0 +1,17 @@
+# Python / Django
+__pycache__/
+*.pyc
+*.pyo
+.env
+staticfiles/
+media/
+db.sqlite3
+apps/ml_predictions/trained_models/*.joblib
+venv/
+.venv/
+
+# General
+.DS_Store
+*.log
+.idea/
+.vscode/
