@@ -2,12 +2,40 @@
 {% block title %}Dashboard{% endblock %}
 {% block content %}
 <h1>Dashboard</h1>
+
+<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px;">
+    <div class="card">
+        <p style="color: var(--text-secondary);">Miembros Activos</p>
+        <div style="font-size:2.2em; font-weight:700;">{{ active_members_count }}</div>
+    </div>
+    <div class="card">
+        <p style="color: var(--text-secondary);">Pagos Pendientes</p>
+        <div style="font-size:2.2em; font-weight:700; color: var(--yellow);">{{ pending_payments_count }}</div>
+    </div>
+    <div class="card">
+        <p style="color: var(--text-secondary);">% Constancia Nutricional</p>
+        <div style="font-size:2.2em; font-weight:700; color: var(--green);">{{ avg_nutrition_adherence }}%</div>
+    </div>
+</div>
+
 <div class="card">
-    <p style="color: var(--text-secondary);">
-        Bienvenido, {{ user.email }}. Las tarjetas de estadísticas
-        (miembros activos, pagos pendientes, % constancia nutricional)
-        y la actividad reciente se agregan en un paso posterior del
-        roadmap.
-    </p>
+    <h3 style="margin-top:0;">Actividad Reciente de Miembros</h3>
+    <table>
+        <thead>
+            <tr><th>Nombre</th><th>Última sesión</th><th>Días de Nutrición</th><th>Meta</th></tr>
+        </thead>
+        <tbody>
+            {% for row in activity %}
+            <tr>
+                <td>{{ row.member.full_name }}</td>
+                <td>{{ row.last_session|date:"Y-m-d"|default:"—" }}</td>
+                <td style="color: var(--green);">{{ row.days_with_log }}/{{ row.days_active|default:"0" }}</td>
+                <td>{{ row.member.get_fitness_goal_display }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="color: var(--text-secondary);">Sin actividad todavía.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endblock %}

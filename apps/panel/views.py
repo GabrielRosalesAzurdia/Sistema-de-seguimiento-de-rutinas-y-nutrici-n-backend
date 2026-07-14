@@ -30,10 +30,34 @@ class PanelLogoutView(LogoutView):
 
 
 class DashboardView(CoachRequiredMixin, TemplateView):
-    """Placeholder — el contenido real (stats, actividad reciente) se
-    construye en un paso posterior del roadmap."""
+    """Dashboard (docs/mockups/admin_panel/01): stats + actividad
+    reciente. % Constancia Nutricional reusa el mismo cálculo VD2 de
+    compute_study_metrics (Track E.5) — limitado a miembros con
+    `participates_in_study=True`, igual que en Datos del estudio."""
 
     template_name = "panel/dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_members_count"] = Member.objects.filter(is_active=True).count()
+        context["pending_payments_count"] = Member.objects.filter(is_paid=False).count()
+
+        metrics = compute_study_metrics()
+        context["avg_nutrition_adherence"] = (
+            round(sum(m["vd2"] for m in metrics) / len(metrics), 1) if metrics else 0
+        )
+
+        activity = []
+        for member in Member.objects.filter(is_active=True).order_by("-updated_at")[:15]:
+            last_session = member.workout_logs.order_by("-completed_at").first()
+            activity.append({
+                "member": member,
+                "last_session": last_session.completed_at if last_session else None,
+                "days_with_log": member.nutrition_logs.count(),
+                "days_active": member.workout_logs.count(),
+            })
+        context["activity"] = activity
+        return context
 
 
 class MembersListView(CoachRequiredMixin, ListView):
