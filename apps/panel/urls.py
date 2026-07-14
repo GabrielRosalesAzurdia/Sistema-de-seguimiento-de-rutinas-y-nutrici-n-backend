@@ -10,4 +10,7 @@ urlpatterns = [
     path("miembros/", views.MembersListView.as_view(), name="members-list"),
     path("miembros/agregar/", views.MemberCreateView.as_view(), name="member-create"),
     path("miembros/<int:pk>/editar/", views.MemberUpdateView.as_view(), name="member-update"),
+    path("rutinas/", views.RoutinesListView.as_view(), name="routines-list"),
+    path("rutinas/<str:category>/editar/", views.RoutineEditExercisesView.as_view(), name="routine-edit"),
+    path("rutinas/calendario/", views.ScheduleUpdateView.as_view(), name="schedule-update"),
 ]

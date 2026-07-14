@@ -66,7 +66,7 @@
         {% if user.is_authenticated %}
             <a href="{% url 'panel:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
             <a href="{% url 'panel:members-list' %}" class="{% if 'member' in request.resolver_match.url_name %}active{% endif %}">Miembros</a>
-            <span class="disabled">Rutinas</span>
+            <a href="{% url 'panel:routines-list' %}" class="{% if 'routine' in request.resolver_match.url_name or 'schedule' in request.resolver_match.url_name %}active{% endif %}">Rutinas</a>
             <span class="disabled">Nutrición</span>
             <span class="disabled">Datos del estudio</span>
             <span style="margin-left: auto; color: var(--text-secondary);">{{ user.email }}</span>

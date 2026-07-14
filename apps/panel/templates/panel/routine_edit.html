@@ -1,0 +1,24 @@
+{% extends "panel/base.html" %}
+{% block title %}Editar ejercicios{% endblock %}
+{% block content %}
+<div class="card" style="max-width:640px; margin:0 auto;">
+    <h2 style="margin-top:0;">Editar ejercicios — {{ routine.get_category_display }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            {% for exercise in exercises %}
+            <label style="display:block; padding:14px; border-radius:8px; cursor:pointer; font-weight:600;
+                          {% if exercise.id in selected_ids %}background: var(--orange); color:#000;{% else %}background:#2A2A2A;{% endif %}">
+                <input type="checkbox" name="exercise_ids" value="{{ exercise.id }}"
+                       {% if exercise.id in selected_ids %}checked{% endif %}
+                       style="margin-right:8px;">
+                {{ exercise.name }}
+            </label>
+            {% empty %}
+            <p style="color: var(--text-secondary);">No hay ejercicios en el catálogo para esta categoría todavía.</p>
+            {% endfor %}
+        </div>
+        <button class="btn" style="background: var(--green); margin-top:20px;" type="submit">Guardar</button>
+    </form>
+</div>
+{% endblock %}

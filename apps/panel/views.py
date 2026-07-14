@@ -1,10 +1,15 @@
 from django.contrib import messages
 from django.contrib.auth.views import LoginView, LogoutView
 from django.db.models import Q
-from django.urls import reverse_lazy
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy, reverse
+from django.views import View
 from django.views.generic import TemplateView, ListView, CreateView, UpdateView
 
-from apps.members.models import Member
+from apps.members.models import Member, Gender
+from apps.routines.models import (
+    Routine, Exercise, RoutineExercise, RoutineCategory, ScheduledRoutineDay, Weekday,
+)
 from .forms import MemberForm
 from .mixins import CoachRequiredMixin
 
@@ -86,3 +91,74 @@ class MemberUpdateView(MemberFormActionMixin, CoachRequiredMixin, UpdateView):
     """Pantalla 'Editar Miembro' (docs/mockups/admin_panel/03)."""
 
     model = Member
+
+
+class RoutinesListView(CoachRequiredMixin, TemplateView):
+    """
+    Pantalla 'Rutinas' (docs/mockups/admin_panel/05): sidebar con las 7
+    categorías, ejercicios vigentes de la categoría seleccionada a la
+    derecha. Incluye además la grilla del calendario semanal por
+    género (Track B) — no está en el mockup original, se agregó por
+    la decisión de negocio del calendario confirmada después.
+    """
+
+    template_name = "panel/routines_list.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        category = self.request.GET.get("category") or RoutineCategory.values[0]
+        context["categories"] = RoutineCategory.choices
+        context["selected_category"] = category
+        context["routine"] = (
+            Routine.objects.filter(category=category)
+            .prefetch_related("exercises__exercise")
+            .first()
+        )
+        context["weekdays"] = Weekday.choices
+        context["genders"] = Gender.choices
+        context["route_categories"] = RoutineCategory.choices
+        schedule = {}
+        for s in ScheduledRoutineDay.objects.all():
+            schedule.setdefault(s.day_of_week, {})[s.gender] = s.category
+        context["schedule"] = schedule
+        return context
+
+
+class RoutineEditExercisesView(CoachRequiredMixin, View):
+    """Pantalla 'Editar ejercicios' (docs/mockups/admin_panel/06):
+    selección múltiple del catálogo de la categoría (toggle), sin
+    reordenar a mano — el orden se asigna según el orden de selección."""
+
+    def get(self, request, category):
+        routine = get_object_or_404(Routine, category=category)
+        exercises = Exercise.objects.filter(category=category, is_active=True)
+        selected_ids = set(routine.exercises.values_list("exercise_id", flat=True))
+        return render(request, "panel/routine_edit.html", {
+            "routine": routine, "exercises": exercises, "selected_ids": selected_ids,
+        })
+
+    def post(self, request, category):
+        routine = get_object_or_404(Routine, category=category)
+        selected_ids = request.POST.getlist("exercise_ids")
+        RoutineExercise.objects.filter(routine=routine).delete()
+        for order, exercise_id in enumerate(selected_ids, start=1):
+            RoutineExercise.objects.create(routine=routine, exercise_id=exercise_id, order=order)
+        messages.success(request, f"Ejercicios de {routine.get_category_display()} actualizados.")
+        return redirect(f"{reverse('panel:routines-list')}?category={category}")
+
+
+class ScheduleUpdateView(CoachRequiredMixin, View):
+    """Guarda la grilla 7x2 del calendario semanal por género (Track B)."""
+
+    def post(self, request):
+        for day, _ in Weekday.choices:
+            for gender, _ in Gender.choices:
+                category = request.POST.get(f"schedule_{day}_{gender}")
+                if category:
+                    ScheduledRoutineDay.objects.update_or_create(
+                        day_of_week=day, gender=gender, defaults={"category": category},
+                    )
+                else:
+                    ScheduledRoutineDay.objects.filter(day_of_week=day, gender=gender).delete()
+        messages.success(request, "Calendario semanal actualizado.")
+        return redirect("panel:routines-list")
