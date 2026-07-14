@@ -1,0 +1,693 @@
+[
+  {
+    "model": "routines.exercise",
+    "pk": 1,
+    "fields": {
+      "name": "Sentadilla Sumo",
+      "category": "PIERNA_CUADRICEPS",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 2,
+    "fields": {
+      "name": "Extensiones",
+      "category": "PIERNA_CUADRICEPS",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 3,
+    "fields": {
+      "name": "Prensa",
+      "category": "PIERNA_CUADRICEPS",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 4,
+    "fields": {
+      "name": "Zancadas",
+      "category": "PIERNA_CUADRICEPS",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 5,
+    "fields": {
+      "name": "Sentadilla Hack",
+      "category": "PIERNA_CUADRICEPS",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 6,
+    "fields": {
+      "name": "Peso Muerto Rumano",
+      "category": "PIERNA_CUADRICEPS",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 7,
+    "fields": {
+      "name": "Levantamiento de Caderas",
+      "category": "PIERNA_CUADRICEPS",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 8,
+    "fields": {
+      "name": "Sentadilla Búlgara",
+      "category": "PIERNA_CUADRICEPS",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 9,
+    "fields": {
+      "name": "Press de banca (placeholder)",
+      "category": "PECHO",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 10,
+    "fields": {
+      "name": "Press inclinado (placeholder)",
+      "category": "PECHO",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 11,
+    "fields": {
+      "name": "Aperturas con mancuerna (placeholder)",
+      "category": "PECHO",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 12,
+    "fields": {
+      "name": "Fondos en paralelas (placeholder)",
+      "category": "PECHO",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 13,
+    "fields": {
+      "name": "Polea abierta",
+      "category": "BRAZOS_ESPALDA",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 14,
+    "fields": {
+      "name": "Peso muerto",
+      "category": "BRAZOS_ESPALDA",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 15,
+    "fields": {
+      "name": "Predicador",
+      "category": "BRAZOS_ESPALDA",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 16,
+    "fields": {
+      "name": "Copa",
+      "category": "BRAZOS_ESPALDA",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 17,
+    "fields": {
+      "name": "Remo",
+      "category": "BRAZOS_ESPALDA",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 18,
+    "fields": {
+      "name": "Cinta caminadora (placeholder)",
+      "category": "CARDIO",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 19,
+    "fields": {
+      "name": "Bicicleta estática (placeholder)",
+      "category": "CARDIO",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 20,
+    "fields": {
+      "name": "Elíptica (placeholder)",
+      "category": "CARDIO",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 21,
+    "fields": {
+      "name": "Plancha (placeholder)",
+      "category": "ABS",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 22,
+    "fields": {
+      "name": "Crunch en máquina (placeholder)",
+      "category": "ABS",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 23,
+    "fields": {
+      "name": "Elevación de piernas (placeholder)",
+      "category": "ABS",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 24,
+    "fields": {
+      "name": "Hip thrust (placeholder)",
+      "category": "PIERNA_GLUTEOS",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 25,
+    "fields": {
+      "name": "Puente de glúteos (placeholder)",
+      "category": "PIERNA_GLUTEOS",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 26,
+    "fields": {
+      "name": "Patada de glúteo en polea (placeholder)",
+      "category": "PIERNA_GLUTEOS",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 27,
+    "fields": {
+      "name": "Press militar (placeholder)",
+      "category": "HOMBRO",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 28,
+    "fields": {
+      "name": "Elevaciones laterales (placeholder)",
+      "category": "HOMBRO",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.exercise",
+    "pk": 29,
+    "fields": {
+      "name": "Pájaros (placeholder)",
+      "category": "HOMBRO",
+      "icon": "",
+      "reference_photo": "",
+      "is_active": true
+    }
+  },
+  {
+    "model": "routines.routine",
+    "pk": 1,
+    "fields": {
+      "category": "PIERNA_CUADRICEPS",
+      "estimated_duration_min_low": 60,
+      "estimated_duration_min_high": 90,
+      "estimated_calories": 450,
+      "updated_at": "2026-07-13T12:00:00Z"
+    }
+  },
+  {
+    "model": "routines.routine",
+    "pk": 2,
+    "fields": {
+      "category": "PECHO",
+      "estimated_duration_min_low": 60,
+      "estimated_duration_min_high": 90,
+      "estimated_calories": 400,
+      "updated_at": "2026-07-13T12:00:00Z"
+    }
+  },
+  {
+    "model": "routines.routine",
+    "pk": 3,
+    "fields": {
+      "category": "BRAZOS_ESPALDA",
+      "estimated_duration_min_low": 60,
+      "estimated_duration_min_high": 90,
+      "estimated_calories": 500,
+      "updated_at": "2026-07-13T12:00:00Z"
+    }
+  },
+  {
+    "model": "routines.routine",
+    "pk": 4,
+    "fields": {
+      "category": "CARDIO",
+      "estimated_duration_min_low": 30,
+      "estimated_duration_min_high": 60,
+      "estimated_calories": 350,
+      "updated_at": "2026-07-13T12:00:00Z"
+    }
+  },
+  {
+    "model": "routines.routine",
+    "pk": 5,
+    "fields": {
+      "category": "ABS",
+      "estimated_duration_min_low": 20,
+      "estimated_duration_min_high": 40,
+      "estimated_calories": 200,
+      "updated_at": "2026-07-13T12:00:00Z"
+    }
+  },
+  {
+    "model": "routines.routine",
+    "pk": 6,
+    "fields": {
+      "category": "PIERNA_GLUTEOS",
+      "estimated_duration_min_low": 60,
+      "estimated_duration_min_high": 90,
+      "estimated_calories": 450,
+      "updated_at": "2026-07-13T12:00:00Z"
+    }
+  },
+  {
+    "model": "routines.routine",
+    "pk": 7,
+    "fields": {
+      "category": "HOMBRO",
+      "estimated_duration_min_low": 45,
+      "estimated_duration_min_high": 75,
+      "estimated_calories": 350,
+      "updated_at": "2026-07-13T12:00:00Z"
+    }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 1,
+    "fields": { "routine": 1, "exercise": 1, "order": 1 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 2,
+    "fields": { "routine": 1, "exercise": 2, "order": 2 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 3,
+    "fields": { "routine": 1, "exercise": 3, "order": 3 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 4,
+    "fields": { "routine": 1, "exercise": 4, "order": 4 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 5,
+    "fields": { "routine": 1, "exercise": 5, "order": 5 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 6,
+    "fields": { "routine": 1, "exercise": 6, "order": 6 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 7,
+    "fields": { "routine": 1, "exercise": 7, "order": 7 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 8,
+    "fields": { "routine": 1, "exercise": 8, "order": 8 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 9,
+    "fields": { "routine": 2, "exercise": 9, "order": 1 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 10,
+    "fields": { "routine": 2, "exercise": 10, "order": 2 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 11,
+    "fields": { "routine": 2, "exercise": 11, "order": 3 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 12,
+    "fields": { "routine": 2, "exercise": 12, "order": 4 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 13,
+    "fields": { "routine": 3, "exercise": 13, "order": 1 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 14,
+    "fields": { "routine": 3, "exercise": 14, "order": 2 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 15,
+    "fields": { "routine": 3, "exercise": 15, "order": 3 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 16,
+    "fields": { "routine": 3, "exercise": 16, "order": 4 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 17,
+    "fields": { "routine": 3, "exercise": 17, "order": 5 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 18,
+    "fields": { "routine": 4, "exercise": 18, "order": 1 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 19,
+    "fields": { "routine": 4, "exercise": 19, "order": 2 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 20,
+    "fields": { "routine": 4, "exercise": 20, "order": 3 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 21,
+    "fields": { "routine": 5, "exercise": 21, "order": 1 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 22,
+    "fields": { "routine": 5, "exercise": 22, "order": 2 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 23,
+    "fields": { "routine": 5, "exercise": 23, "order": 3 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 24,
+    "fields": { "routine": 6, "exercise": 24, "order": 1 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 25,
+    "fields": { "routine": 6, "exercise": 25, "order": 2 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 26,
+    "fields": { "routine": 6, "exercise": 26, "order": 3 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 27,
+    "fields": { "routine": 7, "exercise": 27, "order": 1 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 28,
+    "fields": { "routine": 7, "exercise": 28, "order": 2 }
+  },
+  {
+    "model": "routines.routineexercise",
+    "pk": 29,
+    "fields": { "routine": 7, "exercise": 29, "order": 3 }
+  },
+  {
+    "model": "members.user",
+    "pk": 1000,
+    "fields": {
+      "password": "pbkdf2_sha256$720000$3KgLZBpqmACj2IijFs5jup$/qdk2cCK3nHwlNhjP05LPvvkDjcuRg7Cg1yqs6sN1Y8=",
+      "last_login": null,
+      "is_superuser": false,
+      "username": "miembro.prueba",
+      "first_name": "",
+      "last_name": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2026-07-13T12:00:00Z",
+      "email": "miembro.prueba@fitnessclub.test",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "members.member",
+    "pk": 1000,
+    "fields": {
+      "user": 1000,
+      "first_name": "Ana",
+      "second_name": "",
+      "first_last_name": "Martínez",
+      "second_last_name": "",
+      "email": "ana.martinez@fitnessclub.test",
+      "phone": "55551234",
+      "age": 27,
+      "height_cm": "165.0",
+      "current_weight_kg": "68.50",
+      "goal_weight_kg": "60.00",
+      "body_fat_percentage": "28.5",
+      "body_water_percentage": "52.0",
+      "left_arm_cm": "28.0",
+      "right_arm_cm": "28.5",
+      "left_leg_cm": "52.0",
+      "right_leg_cm": "52.5",
+      "left_calf_cm": "34.0",
+      "right_calf_cm": "34.5",
+      "hip_cm": "98.0",
+      "back_cm": "90.0",
+      "chest_cm": "88.0",
+      "waist_cm": "78.0",
+      "fitness_goal": "PERDER_PESO",
+      "activity_level": "MODERADO",
+      "start_date": "2026-06-01",
+      "next_payment_date": "2026-08-01",
+      "is_paid": true,
+      "is_active": true,
+      "informed_consent_signed": true,
+      "participates_in_study": true,
+      "created_at": "2026-07-13T12:00:00Z",
+      "updated_at": "2026-07-13T12:00:00Z"
+    }
+  },
+  {
+    "model": "nutrition.nutritionplan",
+    "pk": 1000,
+    "fields": {
+      "member": 1000,
+      "status": "APPROVED",
+      "total_calories": 1800,
+      "protein_g": 135,
+      "carbs_g": 180,
+      "fats_g": 55,
+      "generated_by_ml": false,
+      "ml_prediction": null,
+      "reviewed_by": null,
+      "is_current": true,
+      "created_at": "2026-07-13T12:00:00Z",
+      "reviewed_at": "2026-07-13T12:00:00Z"
+    }
+  },
+  {
+    "model": "nutrition.mealsuggestion",
+    "pk": 1000,
+    "fields": {
+      "plan": 1000,
+      "meal_time": "DESAYUNO",
+      "carbs_g": 45,
+      "protein_g": 30,
+      "fats_g": 12,
+      "calories": 400,
+      "suggestion_1": "Avena con banano y huevo",
+      "suggestion_2": "Yogur con granola",
+      "suggestion_3": ""
+    }
+  },
+  {
+    "model": "nutrition.mealsuggestion",
+    "pk": 1001,
+    "fields": {
+      "plan": 1000,
+      "meal_time": "REFACCION_I",
+      "carbs_g": 20,
+      "protein_g": 15,
+      "fats_g": 6,
+      "calories": 180,
+      "suggestion_1": "Fruta con almendras",
+      "suggestion_2": "",
+      "suggestion_3": ""
+    }
+  },
+  {
+    "model": "nutrition.mealsuggestion",
+    "pk": 1002,
+    "fields": {
+      "plan": 1000,
+      "meal_time": "ALMUERZO",
+      "carbs_g": 60,
+      "protein_g": 40,
+      "fats_g": 15,
+      "calories": 550,
+      "suggestion_1": "Pechuga con arroz y ensalada",
+      "suggestion_2": "Pescado con verduras",
+      "suggestion_3": ""
+    }
+  },
+  {
+    "model": "nutrition.mealsuggestion",
+    "pk": 1003,
+    "fields": {
+      "plan": 1000,
+      "meal_time": "REFACCION_II",
+      "carbs_g": 20,
+      "protein_g": 20,
+      "fats_g": 8,
+      "calories": 220,
+      "suggestion_1": "Batido de proteína",
+      "suggestion_2": "",
+      "suggestion_3": ""
+    }
+  },
+  {
+    "model": "nutrition.mealsuggestion",
+    "pk": 1004,
+    "fields": {
+      "plan": 1000,
+      "meal_time": "CENA",
+      "carbs_g": 35,
+      "protein_g": 30,
+      "fats_g": 14,
+      "calories": 450,
+      "suggestion_1": "Pollo a la plancha con vegetales",
+      "suggestion_2": "",
+      "suggestion_3": ""
+    }
+  }
+]
