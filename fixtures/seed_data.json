@@ -691,5 +691,41 @@
       "suggestion_2": "",
       "suggestion_3": ""
     }
+  },
+  {
+    "model": "tracking.bodymeasurementlog",
+    "pk": 1000,
+    "fields": {
+      "member": 1000,
+      "recorded_by": null,
+      "date": "2026-05-01",
+      "weight_kg": "71.00",
+      "body_fat_percentage": "31.2",
+      "body_water_percentage": "50.1"
+    }
+  },
+  {
+    "model": "tracking.bodymeasurementlog",
+    "pk": 1001,
+    "fields": {
+      "member": 1000,
+      "recorded_by": null,
+      "date": "2026-06-01",
+      "weight_kg": "69.80",
+      "body_fat_percentage": "29.8",
+      "body_water_percentage": "51.2"
+    }
+  },
+  {
+    "model": "tracking.bodymeasurementlog",
+    "pk": 1002,
+    "fields": {
+      "member": 1000,
+      "recorded_by": null,
+      "date": "2026-07-01",
+      "weight_kg": "68.50",
+      "body_fat_percentage": "28.5",
+      "body_water_percentage": "52.0"
+    }
   }
 ]

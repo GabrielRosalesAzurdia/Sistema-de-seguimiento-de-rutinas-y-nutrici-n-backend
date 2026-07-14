@@ -52,6 +52,24 @@ class BodyMeasurementLogViewSet(viewsets.ModelViewSet):
         serializer.save(recorded_by=self.request.user)
 
 
+class MyWeightHistoryView(views.APIView):
+    """
+    Historial de peso del propio miembro autenticado, para la gráfica
+    del dashboard (docs/mockups/app/03_dashboard.jpeg — línea de peso
+    dentro de la card "PESO ACTUAL / META"). `BodyMeasurementLogViewSet`
+    es coach-only y sin filtro "mío"; esta vista es de solo lectura y
+    exclusiva para que el propio miembro vea su historial.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        member = request.user.member_profile
+        logs = BodyMeasurementLog.objects.filter(member=member).order_by("date")
+        return Response([
+            {"date": log.date, "weight_kg": log.weight_kg} for log in logs
+        ])
+
+
 class MyTrackingSummaryView(views.APIView):
     """
     Resumen del miembro autenticado para las cards "CALORÍAS QUEMADAS
