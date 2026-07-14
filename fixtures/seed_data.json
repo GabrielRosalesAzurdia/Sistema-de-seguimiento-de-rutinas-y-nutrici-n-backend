@@ -571,6 +571,8 @@
       "phone": "55551234",
       "age": 27,
       "height_cm": "165.0",
+      "gender": "MUJER",
+      "neck_cm": "32.0",
       "current_weight_kg": "68.50",
       "goal_weight_kg": "60.00",
       "body_fat_percentage": "28.5",

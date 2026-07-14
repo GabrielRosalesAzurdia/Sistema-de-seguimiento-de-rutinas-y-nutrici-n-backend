@@ -47,6 +47,18 @@ class ActivityLevel(models.TextChoices):
     MUY_ACTIVO = "MUY_ACTIVO", "Muy activo"
 
 
+class Gender(models.TextChoices):
+    """
+    Alcance limitado a lo que requiere el calendario semanal de
+    rutinas (cada día de la semana asigna una categoría distinta
+    según género, ver ScheduledRoutineDay en apps.routines) y la
+    fórmula U.S. Navy de % de grasa corporal, que usa una variante de
+    cálculo distinta por género.
+    """
+    HOMBRE = "HOMBRE", "Hombre"
+    MUJER = "MUJER", "Mujer"
+
+
 class Member(models.Model):
     """
     Usuario del gimnasio (miembro). Datos personales completos son
@@ -76,6 +88,11 @@ class Member(models.Model):
     phone = models.CharField("Teléfono", max_length=20, blank=True)
     age = models.PositiveSmallIntegerField("Edad")
     height_cm = models.DecimalField("Altura (cm)", max_digits=5, decimal_places=1)
+    gender = models.CharField(
+        "Género", max_length=10, choices=Gender.choices, null=True, blank=True,
+        help_text="Determina la rutina asignada del calendario semanal y la "
+                   "fórmula de % de grasa corporal usada.",
+    )
 
     # --- Datos físicos (peso y medidas: SOLO el coach los edita) ---
     current_weight_kg = models.DecimalField(
@@ -102,6 +119,10 @@ class Member(models.Model):
     back_cm = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
     chest_cm = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
     waist_cm = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
+    neck_cm = models.DecimalField(
+        "Cuello (cm)", max_digits=5, decimal_places=1, null=True, blank=True,
+        help_text="Requerido para calcular % de grasa corporal (U.S. Navy Method).",
+    )
 
     # --- Objetivo y nivel de actividad ---
     fitness_goal = models.CharField(
@@ -135,6 +156,20 @@ class Member(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.first_last_name}"
+
+    def save(self, *args, **kwargs):
+        from .services import calculate_body_composition
+
+        # Solo se sobreescribe si hay suficientes medidas para calcular
+        # (cintura/cuello/altura, +cadera en mujeres) — si faltan
+        # (p. ej. neck_cm todavía no medido), se preserva el valor que
+        # ya estuviera guardado en vez de borrarlo con None.
+        body_fat, body_water = calculate_body_composition(self)
+        if body_fat is not None:
+            self.body_fat_percentage = body_fat
+        if body_water is not None:
+            self.body_water_percentage = body_water
+        super().save(*args, **kwargs)
 
     @property
     def full_name(self):
