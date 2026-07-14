@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from common.permissions import IsCoach
 from .models import Member
 from .serializers import (
     MemberAdminSerializer,
@@ -19,13 +20,6 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = EmailTokenObtainPairSerializer
-
-
-class IsCoach(permissions.BasePermission):
-    """Solo el coach (is_staff) puede administrar miembros vía panel."""
-
-    def has_permission(self, request, view):
-        return bool(request.user and request.user.is_staff)
 
 
 class MemberAdminViewSet(viewsets.ModelViewSet):

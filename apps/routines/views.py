@@ -1,17 +1,9 @@
 from django.utils import timezone
 from rest_framework import viewsets, permissions, views
 from rest_framework.response import Response
+from common.permissions import IsCoachOrReadOnly
 from .models import Routine, Exercise, RoutineExercise, ScheduledRoutineDay
 from .serializers import RoutineSerializer, ExerciseSerializer, RoutineExerciseSerializer
-
-
-class IsCoachOrReadOnly(permissions.BasePermission):
-    """Los miembros (app) solo leen; el coach (panel) puede editar."""
-
-    def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return request.user and request.user.is_authenticated
-        return bool(request.user and request.user.is_staff)
 
 
 class RoutineViewSet(viewsets.ModelViewSet):

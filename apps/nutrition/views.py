@@ -3,13 +3,9 @@ from rest_framework import viewsets, permissions, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from common.permissions import IsCoach
 from .models import NutritionPlan
 from .serializers import NutritionPlanSerializer, NutritionPlanReviewSerializer
-
-
-class IsCoach(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return bool(request.user and request.user.is_staff)
 
 
 class MyCurrentPlanView(generics.RetrieveAPIView):

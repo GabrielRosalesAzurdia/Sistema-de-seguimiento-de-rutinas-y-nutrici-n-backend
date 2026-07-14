@@ -4,23 +4,12 @@ from django.http import HttpResponse
 from rest_framework import viewsets, permissions, views
 from rest_framework.response import Response
 
+from common.permissions import IsCoach, IsOwnerOrCoach
 from apps.members.models import Member
 from .models import WorkoutSessionLog, DailyNutritionLog, BodyMeasurementLog
 from .serializers import (
     WorkoutSessionLogSerializer, DailyNutritionLogSerializer, BodyMeasurementLogSerializer,
 )
-
-
-class IsCoach(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return bool(request.user and request.user.is_staff)
-
-
-class IsOwnerOrCoach(permissions.BasePermission):
-    """El miembro solo ve/crea sus propios registros; el coach ve todo."""
-
-    def has_permission(self, request, view):
-        return bool(request.user and request.user.is_authenticated)
 
 
 class WorkoutSessionLogViewSet(viewsets.ModelViewSet):

@@ -1,0 +1,22 @@
+{% extends "panel/base.html" %}
+{% block title %}Iniciar sesión{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 360px; margin: 60px auto;">
+    <h2 style="margin-top:0;">Iniciar sesión</h2>
+    <form method="post">
+        {% csrf_token %}
+        {% if form.errors %}
+            <p style="color: var(--danger);">Correo o contraseña incorrectos.</p>
+        {% endif %}
+        <p>
+            <label>Correo</label><br>
+            {{ form.username }}
+        </p>
+        <p>
+            <label>Contraseña</label><br>
+            {{ form.password }}
+        </p>
+        <button class="btn" type="submit">Entrar</button>
+    </form>
+</div>
+{% endblock %}

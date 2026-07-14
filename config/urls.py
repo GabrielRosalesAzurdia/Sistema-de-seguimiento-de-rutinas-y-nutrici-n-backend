@@ -5,6 +5,8 @@ from apps.members.views import EmailTokenObtainPairView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # Panel de administración web (coach)
+    path("panel/", include("apps.panel.urls")),
     # Autenticación
     path("api/auth/login/", EmailTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),

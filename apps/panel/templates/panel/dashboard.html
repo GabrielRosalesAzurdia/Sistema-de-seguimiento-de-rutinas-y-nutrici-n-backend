@@ -1,0 +1,13 @@
+{% extends "panel/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="card">
+    <p style="color: var(--text-secondary);">
+        Bienvenido, {{ user.email }}. Las tarjetas de estadísticas
+        (miembros activos, pagos pendientes, % constancia nutricional)
+        y la actividad reciente se agregan en un paso posterior del
+        roadmap.
+    </p>
+</div>
+{% endblock %}

@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "apps.nutrition",
     "apps.tracking",
     "apps.ml_predictions",
+    "apps.panel",
 ]
 
 MIDDLEWARE = [
