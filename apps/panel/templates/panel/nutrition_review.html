@@ -1,0 +1,66 @@
+{% extends "panel/base.html" %}
+{% block title %}Nutrición{% endblock %}
+{% block content %}
+<h1>Nutrición</h1>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+    <div class="card" style="text-align:center;">
+        <p style="color: var(--text-secondary); margin-bottom:8px;">Dietas por Revisar</p>
+        <div style="font-size:2.5em; font-weight:700; color: var(--orange);">{{ pending|length }}</div>
+    </div>
+    <div class="card" style="text-align:center;">
+        <p style="color: var(--text-secondary); margin-bottom:8px;">Dietas Revisadas</p>
+        <div style="font-size:2.5em; font-weight:700; color: var(--green);">{{ approved|length }}</div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px;">
+    <div class="card">
+        <h3 style="margin-top:0;">Dietas pendientes de Revisión</h3>
+        <table>
+            <thead><tr><th>Nombre</th><th>G</th><th>C</th><th>P</th><th></th></tr></thead>
+            <tbody>
+                {% for plan in pending %}
+                <tr>
+                    <td>{{ plan.member.full_name }}</td>
+                    <td>{{ plan.fats_g }}</td>
+                    <td>{{ plan.carbs_g }}</td>
+                    <td>{{ plan.protein_g }}</td>
+                    <td style="white-space:nowrap;">
+                        <form method="post" action="{% url 'panel:nutrition-plan-review' plan.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button name="action" value="reject" class="btn" style="background: var(--danger); padding:4px 10px;">✕</button>
+                        </form>
+                        <form method="post" action="{% url 'panel:nutrition-plan-review' plan.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button name="action" value="approve" class="btn" style="background: var(--green); padding:4px 10px;">✓</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" style="color: var(--text-secondary);">Sin dietas pendientes.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0;">Dietas Aprobadas y en Seguimiento</h3>
+        <table>
+            <thead><tr><th>Nombre</th><th>G</th><th>C</th><th>P</th></tr></thead>
+            <tbody>
+                {% for plan in approved %}
+                <tr>
+                    <td>{{ plan.member.full_name }}</td>
+                    <td>{{ plan.fats_g }}</td>
+                    <td>{{ plan.carbs_g }}</td>
+                    <td>{{ plan.protein_g }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" style="color: var(--text-secondary);">Sin dietas aprobadas todavía.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

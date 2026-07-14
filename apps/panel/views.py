@@ -3,6 +3,7 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy, reverse
+from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView, ListView, CreateView, UpdateView
 
@@ -10,6 +11,7 @@ from apps.members.models import Member, Gender
 from apps.routines.models import (
     Routine, Exercise, RoutineExercise, RoutineCategory, ScheduledRoutineDay, Weekday,
 )
+from apps.nutrition.models import NutritionPlan
 from .forms import MemberForm
 from .mixins import CoachRequiredMixin
 
@@ -162,3 +164,43 @@ class ScheduleUpdateView(CoachRequiredMixin, View):
                     ScheduledRoutineDay.objects.filter(day_of_week=day, gender=gender).delete()
         messages.success(request, "Calendario semanal actualizado.")
         return redirect("panel:routines-list")
+
+
+class NutritionReviewView(CoachRequiredMixin, TemplateView):
+    """Pantalla 'Nutrición' (docs/mockups/admin_panel/07): dietas
+    pendientes de revisión vs. aprobadas y en seguimiento."""
+
+    template_name = "panel/nutrition_review.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["pending"] = NutritionPlan.objects.filter(
+            status="PENDING_REVIEW"
+        ).select_related("member").order_by("-created_at")
+        context["approved"] = NutritionPlan.objects.filter(
+            status="APPROVED"
+        ).select_related("member").order_by("-created_at")
+        return context
+
+
+class NutritionPlanReviewActionView(CoachRequiredMixin, View):
+    """Aprobar/rechazar un plan pendiente — misma lógica de negocio
+    que apps.nutrition.views.ReviewNutritionPlanView (DRF), invocada
+    aquí desde un form POST del panel en vez de un PATCH del API."""
+
+    def post(self, request, pk):
+        plan = get_object_or_404(NutritionPlan, pk=pk)
+        action = request.POST.get("action")
+        if action == "approve":
+            plan.status = "APPROVED"
+        elif action == "reject":
+            plan.status = "REJECTED"
+        else:
+            messages.error(request, "Acción no reconocida.")
+            return redirect("panel:nutrition-review")
+
+        plan.reviewed_by = request.user
+        plan.reviewed_at = timezone.now()
+        plan.save()
+        messages.success(request, f"Plan de {plan.member.full_name} actualizado.")
+        return redirect("panel:nutrition-review")

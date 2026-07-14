@@ -13,4 +13,6 @@ urlpatterns = [
     path("rutinas/", views.RoutinesListView.as_view(), name="routines-list"),
     path("rutinas/<str:category>/editar/", views.RoutineEditExercisesView.as_view(), name="routine-edit"),
     path("rutinas/calendario/", views.ScheduleUpdateView.as_view(), name="schedule-update"),
+    path("nutricion/", views.NutritionReviewView.as_view(), name="nutrition-review"),
+    path("nutricion/<int:pk>/revisar/", views.NutritionPlanReviewActionView.as_view(), name="nutrition-plan-review"),
 ]
