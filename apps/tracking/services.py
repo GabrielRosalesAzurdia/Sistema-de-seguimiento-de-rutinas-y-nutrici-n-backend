@@ -10,6 +10,10 @@ NOTA pendiente (ver CLAUDE.md sección 1 y 8): "sesiones planificadas"
 completadas, o sea VD1 siempre 100%) hasta que se defina la fórmula
 operacional con el asesor.
 """
+from datetime import timedelta
+from django.db.models import Sum
+from django.utils import timezone
+
 from apps.members.models import Member
 
 
@@ -51,3 +55,34 @@ def compute_study_metrics(start=None, end=None):
             "vd2": vd2,
         })
     return results
+
+
+def compute_total_calories_burned(member) -> int:
+    """Suma de `WorkoutSessionLog.calories_burned` histórica del
+    miembro — alimenta la card 'Calorías quemadas en total' del
+    dashboard."""
+    total = member.workout_logs.aggregate(total=Sum("calories_burned"))["total"]
+    return total or 0
+
+
+def compute_workout_streak(member) -> int:
+    """
+    Racha = días consecutivos con al menos una `WorkoutSessionLog`
+    completada (decisión de negocio: constancia de entrenamiento, no
+    de nutrición).
+
+    Si hoy todavía no hay registro, la racha se cuenta desde ayer (no
+    se rompe solo porque el día actual no ha terminado) — mismo
+    criterio que usan apps de hábitos tipo Duolingo.
+    """
+    dates_with_workout = set(
+        member.workout_logs.values_list("completed_at__date", flat=True)
+    )
+    today = timezone.localdate()
+    day = today if today in dates_with_workout else today - timedelta(days=1)
+
+    streak = 0
+    while day in dates_with_workout:
+        streak += 1
+        day -= timedelta(days=1)
+    return streak

@@ -2,7 +2,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 from .views import (
     WorkoutSessionLogViewSet, DailyNutritionLogViewSet,
-    BodyMeasurementLogViewSet, StudyExportView,
+    BodyMeasurementLogViewSet, StudyExportView, MyTrackingSummaryView,
 )
 
 router = DefaultRouter()
@@ -12,4 +12,5 @@ router.register("measurement-logs", BodyMeasurementLogViewSet, basename="measure
 
 urlpatterns = [
     path("study-export/", StudyExportView.as_view(), name="study-export"),
+    path("me/summary/", MyTrackingSummaryView.as_view(), name="my-tracking-summary"),
 ] + router.urls

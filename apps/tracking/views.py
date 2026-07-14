@@ -12,7 +12,7 @@ from .models import WorkoutSessionLog, DailyNutritionLog, BodyMeasurementLog
 from .serializers import (
     WorkoutSessionLogSerializer, DailyNutritionLogSerializer, BodyMeasurementLogSerializer,
 )
-from .services import compute_study_metrics
+from .services import compute_study_metrics, compute_total_calories_burned, compute_workout_streak
 
 
 class WorkoutSessionLogViewSet(viewsets.ModelViewSet):
@@ -50,6 +50,22 @@ class BodyMeasurementLogViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(recorded_by=self.request.user)
+
+
+class MyTrackingSummaryView(views.APIView):
+    """
+    Resumen del miembro autenticado para las cards "CALORÍAS QUEMADAS
+    EN TOTAL" y "RACHA" del dashboard (antes ausentes, ver
+    docs/mockups/app/03_dashboard.jpeg).
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        member = request.user.member_profile
+        return Response({
+            "total_calories_burned": compute_total_calories_burned(member),
+            "streak_days": compute_workout_streak(member),
+        })
 
 
 class StudyExportView(views.APIView):
