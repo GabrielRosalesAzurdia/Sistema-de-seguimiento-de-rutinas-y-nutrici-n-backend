@@ -16,6 +16,7 @@ para no bloquear el desarrollo del resto del sistema.
 """
 from pathlib import Path
 import joblib
+import pandas as pd
 
 MODEL_DIR = Path(__file__).resolve().parent / "trained_models"
 
@@ -58,10 +59,15 @@ def predict_days_to_goal(member, recent_training_adherence: float, recent_nutrit
     }
 
     if model is not None:
-        # El modelo real espera un vector numérico ya codificado; ver
-        # ml/training/train_progress_model.py para el preprocesamiento
-        # exacto (one-hot de activity_level/fitness_goal, escalado, etc.)
-        prediction = model.predict([_vectorize(features)])[0]
+        # DataFrame de una fila con los mismos nombres/orden de columnas
+        # que ml/training/train_progress_model.py::build_features(),
+        # para que sklearn no emita el warning de "missing feature names"
+        # y quede explícito qué columna es cuál.
+        X = pd.DataFrame([_vectorize(features)], columns=[
+            "age", "imc", "activity_level", "fitness_goal",
+            "weight_diff_kg", "training_adherence", "nutrition_adherence",
+        ])
+        prediction = model.predict(X)[0]
         days = max(int(round(prediction)), 0)
         model_type = "RANDOM_FOREST"
     else:
