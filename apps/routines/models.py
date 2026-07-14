@@ -1,4 +1,5 @@
 from django.db import models
+from apps.members.models import Gender
 
 
 class RoutineCategory(models.TextChoices):
@@ -83,3 +84,42 @@ class RoutineExercise(models.Model):
 
     def __str__(self):
         return f"{self.routine} - {self.order}. {self.exercise.name}"
+
+
+class Weekday(models.IntegerChoices):
+    LUNES = 0, "Lunes"
+    MARTES = 1, "Martes"
+    MIERCOLES = 2, "Miércoles"
+    JUEVES = 3, "Jueves"
+    VIERNES = 4, "Viernes"
+    SABADO = 5, "Sábado"
+    DOMINGO = 6, "Domingo"
+
+
+class ScheduledRoutineDay(models.Model):
+    """
+    Calendario semanal de rutinas: qué categoría le toca a cada género
+    en cada día de la semana (decisión de negocio confirmada con el
+    desarrollador/coach, ver CLAUDE.md). Editable libremente por el
+    coach desde el panel admin (p. ej. reasignar un día a Cardio para
+    un género en particular).
+
+    Un día de la semana sin fila para un género = no hay rutina
+    asignada ese día para ese género (día de descanso), no es un
+    error — el enpoint `me/today/` lo maneja como "sin rutina hoy".
+    """
+    day_of_week = models.PositiveSmallIntegerField("Día", choices=Weekday.choices)
+    gender = models.CharField(max_length=10, choices=Gender.choices)
+    category = models.CharField(max_length=20, choices=RoutineCategory.choices)
+
+    class Meta:
+        verbose_name = "Día de calendario semanal"
+        verbose_name_plural = "Calendario semanal de rutinas"
+        unique_together = ["day_of_week", "gender"]
+        ordering = ["day_of_week", "gender"]
+
+    def __str__(self):
+        return (
+            f"{self.get_day_of_week_display()} - {self.get_gender_display()} - "
+            f"{self.get_category_display()}"
+        )

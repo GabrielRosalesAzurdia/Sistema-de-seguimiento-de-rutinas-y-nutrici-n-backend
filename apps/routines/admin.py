@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Routine, Exercise, RoutineExercise
+from .models import Routine, Exercise, RoutineExercise, ScheduledRoutineDay
 
 
 class RoutineExerciseInline(admin.TabularInline):
@@ -18,3 +18,10 @@ class ExerciseAdmin(admin.ModelAdmin):
     list_display = ["name", "category", "is_active"]
     list_filter = ["category", "is_active"]
     search_fields = ["name"]
+
+
+@admin.register(ScheduledRoutineDay)
+class ScheduledRoutineDayAdmin(admin.ModelAdmin):
+    list_display = ["day_of_week", "gender", "category"]
+    list_filter = ["gender", "day_of_week"]
+    ordering = ["day_of_week", "gender"]
