@@ -65,7 +65,7 @@
         <span class="brand">FITNESS CLUB</span>
         {% if user.is_authenticated %}
             <a href="{% url 'panel:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
-            <span class="disabled">Miembros</span>
+            <a href="{% url 'panel:members-list' %}" class="{% if 'member' in request.resolver_match.url_name %}active{% endif %}">Miembros</a>
             <span class="disabled">Rutinas</span>
             <span class="disabled">Nutrición</span>
             <span class="disabled">Datos del estudio</span>

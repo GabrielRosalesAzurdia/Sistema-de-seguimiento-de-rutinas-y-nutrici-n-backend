@@ -1,0 +1,64 @@
+{% extends "panel/base.html" %}
+{% block title %}{% if object %}Editar Miembro{% else %}Agregar Miembro{% endif %}{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 720px; margin: 0 auto;">
+    <h2 style="margin-top:0;">{% if object %}Editar Miembro{% else %}Agregar Miembro{% endif %}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {% if form.errors %}
+            <p style="color: var(--danger);">Revisa los campos marcados.</p>
+        {% endif %}
+
+        <h3>Datos Personales</h3>
+        <div class="form-grid">
+            {% for field in form %}
+                {% if field.name in "first_name,second_name,phone,first_last_name,second_last_name,age,email,start_date" %}
+                <div>
+                    <label>{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<small style="color: var(--danger);">{{ field.errors|join:", " }}</small>{% endif %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <h3>Datos Físicos</h3>
+        <div class="form-grid">
+            {% for field in form %}
+                {% if field.name not in "first_name,second_name,phone,first_last_name,second_last_name,age,email,start_date,next_payment_date" %}
+                <div>
+                    <label>{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<small style="color: var(--danger);">{{ field.errors|join:", " }}</small>{% endif %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <h3>Membresía</h3>
+        <div class="form-grid">
+            <div>
+                <label>{{ form.next_payment_date.label }}</label>
+                {{ form.next_payment_date }}
+            </div>
+        </div>
+
+        <div style="margin-top: 24px; display:flex; gap: 12px;">
+            <button class="btn" style="background: var(--green);" type="submit" name="save">Guardar</button>
+            <button class="btn" type="submit" name="mark_paid">Pagado</button>
+            {% if object %}
+            <button class="btn" style="background: var(--orange); color:#000;" type="submit" name="deactivate">Desactivar Usuario</button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+<style>
+    .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .form-grid input, .form-grid select {
+        width: 100%; padding: 9px 10px; border-radius: 8px; border: none;
+        background: #141414; color: #fff;
+    }
+    .form-grid label { display:block; margin-bottom: 4px; color: var(--text-secondary); font-size: 0.9em; }
+    h3 { color: var(--text-secondary); font-size: 1em; text-transform: uppercase; letter-spacing: 0.5px; }
+</style>
+{% endblock %}

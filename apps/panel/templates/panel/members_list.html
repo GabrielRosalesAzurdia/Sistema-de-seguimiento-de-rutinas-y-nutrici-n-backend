@@ -1,0 +1,50 @@
+{% extends "panel/base.html" %}
+{% block title %}Miembros{% endblock %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center;">
+    <h1>Miembros</h1>
+    <a class="btn" href="{% url 'panel:member-create' %}">+ Agregar Miembro</a>
+</div>
+
+<div class="card">
+    <form method="get" style="margin-bottom: 20px;">
+        <input type="text" name="q" value="{{ query }}" placeholder="Buscar miembro..."
+               style="width:100%; padding:10px 14px; border-radius:8px; border:none; background:#141414; color:#fff;">
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Edad</th>
+                <th>Meta</th>
+                <th>Fecha de Inicio</th>
+                <th>Siguiente Pago</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in members %}
+            <tr>
+                <td>{{ member.full_name }}</td>
+                <td>{{ member.age }}</td>
+                <td>{{ member.get_fitness_goal_display }}</td>
+                <td>{{ member.start_date|date:"Y-m-d" }}</td>
+                <td>{{ member.next_payment_date|date:"Y-m-d"|default:"—" }}</td>
+                <td><a href="{% url 'panel:member-update' member.pk %}" style="color: var(--green);">✎ Editar</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" style="color: var(--text-secondary);">Sin miembros todavía.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if is_paginated %}
+    <div style="margin-top:16px; color: var(--text-secondary);">
+        {% if page_obj.has_previous %}<a href="?q={{ query }}&page={{ page_obj.previous_page_number }}">« Anterior</a>{% endif %}
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+        {% if page_obj.has_next %}<a href="?q={{ query }}&page={{ page_obj.next_page_number }}">Siguiente »</a>{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
