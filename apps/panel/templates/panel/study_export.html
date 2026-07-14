@@ -1,0 +1,60 @@
+{% extends "panel/base.html" %}
+{% block title %}Datos del estudio{% endblock %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center;">
+    <h1>Exportador de Datos de Estudio</h1>
+    <a class="btn" href="/api/tracking/study-export/?start={{ start }}&end={{ end }}">⬇ Exportar a CSV</a>
+</div>
+
+<div class="card">
+    <form method="get" style="display:flex; gap:12px; align-items:center;">
+        <label style="color: var(--text-secondary);">Rango de Fechas</label>
+        <input type="date" name="start" value="{{ start }}"
+               style="padding:8px; border-radius:8px; border:none; background:#141414; color:#fff;">
+        <span>al</span>
+        <input type="date" name="end" value="{{ end }}"
+               style="padding:8px; border-radius:8px; border:none; background:#141414; color:#fff;">
+        <button class="btn" type="submit">Filtrar</button>
+    </form>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+    <div class="card" style="text-align:center;">
+        <p style="color: var(--text-secondary);">Promedio de Constancia en Entrenamiento</p>
+        <div style="font-size:2.5em; font-weight:700; color: var(--orange);">{{ avg_vd1 }}%</div>
+    </div>
+    <div class="card" style="text-align:center;">
+        <p style="color: var(--text-secondary);">Promedio de Constancia Nutricional</p>
+        <div style="font-size:2.5em; font-weight:700; color: var(--green);">{{ avg_vd2 }}%</div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+    <div class="card">
+        <h3 style="margin-top:0;">VD1 - Constancia al Entrenamiento</h3>
+        <table>
+            <thead><tr><th>Nombre</th><th>Planeadas</th><th>Completadas</th><th>%</th></tr></thead>
+            <tbody>
+                {% for m in metrics %}
+                <tr><td>{{ m.name }}</td><td>{{ m.planned }}</td><td>{{ m.completed }}</td><td>{{ m.vd1 }}%</td></tr>
+                {% empty %}
+                <tr><td colspan="4" style="color: var(--text-secondary);">Sin miembros en el estudio.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h3 style="margin-top:0;">VD2 - Constancia Nutricional</h3>
+        <table>
+            <thead><tr><th>Nombre</th><th>Días Activos</th><th>Ingresos</th><th>%</th></tr></thead>
+            <tbody>
+                {% for m in metrics %}
+                <tr><td>{{ m.name }}</td><td>{{ m.days_active }}</td><td>{{ m.days_with_log }}</td><td>{{ m.vd2 }}%</td></tr>
+                {% empty %}
+                <tr><td colspan="4" style="color: var(--text-secondary);">Sin miembros en el estudio.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+"""
+Cálculo de VD1 (constancia al entrenamiento) y VD2 (constancia
+nutricional) por miembro que participa en el estudio. Compartido entre
+el endpoint de exportación CSV (apps.tracking.views.StudyExportView) y
+la pantalla del panel "Datos del estudio" (apps.panel.views), para no
+duplicar la lógica en dos lugares.
+
+NOTA pendiente (ver CLAUDE.md sección 1 y 8): "sesiones planificadas"
+(denominador de VD1) todavía usa un placeholder (= sesiones
+completadas, o sea VD1 siempre 100%) hasta que se defina la fórmula
+operacional con el asesor.
+"""
+from apps.members.models import Member
+
+
+def compute_study_metrics(start=None, end=None):
+    """
+    Devuelve una lista de dicts, uno por miembro con
+    `participates_in_study=True`, con VD1 y VD2 para el rango de
+    fechas dado (o todo el histórico si start/end son None).
+    """
+    results = []
+    for member in Member.objects.filter(participates_in_study=True):
+        workouts = member.workout_logs.all()
+        nutrition_logs = member.nutrition_logs.all()
+        if start:
+            workouts = workouts.filter(completed_at__date__gte=start)
+            nutrition_logs = nutrition_logs.filter(date__gte=start)
+        if end:
+            workouts = workouts.filter(completed_at__date__lte=end)
+            nutrition_logs = nutrition_logs.filter(date__lte=end)
+
+        completed = workouts.count()
+        # Placeholder: "planificadas" = completadas hasta cerrar la
+        # definición operacional real con el asesor.
+        planned = completed
+        vd1 = round((completed / planned) * 100, 1) if planned else 0
+
+        days_active = workouts.count() or 0
+        days_with_log = nutrition_logs.count()
+        vd2 = round((days_with_log / days_active) * 100, 1) if days_active else 0
+
+        results.append({
+            "member": member,
+            "name": member.full_name,
+            "planned": planned,
+            "completed": completed,
+            "vd1": vd1,
+            "days_active": days_active,
+            "days_with_log": days_with_log,
+            "vd2": vd2,
+        })
+    return results

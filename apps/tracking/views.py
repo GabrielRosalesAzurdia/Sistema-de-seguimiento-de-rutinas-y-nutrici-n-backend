@@ -2,6 +2,8 @@ import csv
 from django.db.models import Count, Q
 from django.http import HttpResponse
 from rest_framework import viewsets, permissions, views
+from rest_framework.authentication import SessionAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
 
 from common.permissions import IsCoach, IsOwnerOrCoach
@@ -10,6 +12,7 @@ from .models import WorkoutSessionLog, DailyNutritionLog, BodyMeasurementLog
 from .serializers import (
     WorkoutSessionLogSerializer, DailyNutritionLogSerializer, BodyMeasurementLogSerializer,
 )
+from .services import compute_study_metrics
 
 
 class WorkoutSessionLogViewSet(viewsets.ModelViewSet):
@@ -57,8 +60,13 @@ class StudyExportView(views.APIView):
     del panel admin (Exportador de Datos de Estudio).
 
     Uso: GET /api/tracking/study-export/?start=2026-10-01&end=2026-11-30
+
+    Acepta JWT (consumo API normal) o sesión de Django (link directo
+    desde la pantalla "Datos del estudio" del panel, que autentica por
+    sesión en vez de JWT).
     """
     permission_classes = [IsCoach]
+    authentication_classes = [JWTAuthentication, SessionAuthentication]
 
     def get(self, request):
         start = request.query_params.get("start")
@@ -69,31 +77,10 @@ class StudyExportView(views.APIView):
         writer = csv.writer(response)
         writer.writerow(["Nombre", "Sesiones planificadas", "Sesiones completadas", "VD1 %", "Días activos", "Días con registro nutricional", "VD2 %"])
 
-        members = Member.objects.filter(participates_in_study=True)
-        for member in members:
-            workouts = member.workout_logs.all()
-            nutrition_logs = member.nutrition_logs.all()
-            if start:
-                workouts = workouts.filter(completed_at__date__gte=start)
-                nutrition_logs = nutrition_logs.filter(date__gte=start)
-            if end:
-                workouts = workouts.filter(completed_at__date__lte=end)
-                nutrition_logs = nutrition_logs.filter(date__lte=end)
-
-            completed = workouts.count()
-            # NOTA: "planificadas" depende de la definición operacional acordada
-            # con el asesor (p.ej. sesiones esperadas por semana * semanas activas).
-            # Placeholder: usar completadas como referencia hasta implementar el
-            # cálculo real de sesiones planificadas por miembro.
-            planned = completed
-            vd1 = round((completed / planned) * 100, 1) if planned else 0
-
-            days_active = (member.workout_logs.count() or 0)
-            days_with_log = nutrition_logs.count()
-            vd2 = round((days_with_log / days_active) * 100, 1) if days_active else 0
-
+        for m in compute_study_metrics(start, end):
             writer.writerow([
-                member.full_name, planned, completed, vd1, days_active, days_with_log, vd2,
+                m["name"], m["planned"], m["completed"], m["vd1"],
+                m["days_active"], m["days_with_log"], m["vd2"],
             ])
 
         return response

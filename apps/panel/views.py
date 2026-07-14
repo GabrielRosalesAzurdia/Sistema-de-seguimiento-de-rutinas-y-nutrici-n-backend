@@ -12,6 +12,7 @@ from apps.routines.models import (
     Routine, Exercise, RoutineExercise, RoutineCategory, ScheduledRoutineDay, Weekday,
 )
 from apps.nutrition.models import NutritionPlan
+from apps.tracking.services import compute_study_metrics
 from .forms import MemberForm
 from .mixins import CoachRequiredMixin
 
@@ -204,3 +205,27 @@ class NutritionPlanReviewActionView(CoachRequiredMixin, View):
         plan.save()
         messages.success(request, f"Plan de {plan.member.full_name} actualizado.")
         return redirect("panel:nutrition-review")
+
+
+class StudyDataView(CoachRequiredMixin, TemplateView):
+    """
+    Pantalla 'Datos del estudio' (docs/mockups/admin_panel/08): rango
+    de fechas, promedios VD1/VD2 y tablas de detalle por miembro. El
+    botón "Exportar a CSV" enlaza directo al endpoint DRF ya existente
+    (GET /api/tracking/study-export/), que ahora también acepta sesión
+    de Django además de JWT.
+    """
+
+    template_name = "panel/study_export.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        start = self.request.GET.get("start", "")
+        end = self.request.GET.get("end", "")
+        metrics = compute_study_metrics(start or None, end or None)
+        context["start"] = start
+        context["end"] = end
+        context["metrics"] = metrics
+        context["avg_vd1"] = round(sum(m["vd1"] for m in metrics) / len(metrics), 1) if metrics else 0
+        context["avg_vd2"] = round(sum(m["vd2"] for m in metrics) / len(metrics), 1) if metrics else 0
+        return context

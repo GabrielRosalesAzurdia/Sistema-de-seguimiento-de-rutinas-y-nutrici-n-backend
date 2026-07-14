@@ -68,7 +68,7 @@
             <a href="{% url 'panel:members-list' %}" class="{% if 'member' in request.resolver_match.url_name %}active{% endif %}">Miembros</a>
             <a href="{% url 'panel:routines-list' %}" class="{% if 'routine' in request.resolver_match.url_name or 'schedule' in request.resolver_match.url_name %}active{% endif %}">Rutinas</a>
             <a href="{% url 'panel:nutrition-review' %}" class="{% if 'nutrition' in request.resolver_match.url_name %}active{% endif %}">Nutrición</a>
-            <span class="disabled">Datos del estudio</span>
+            <a href="{% url 'panel:study-data' %}" class="{% if 'study' in request.resolver_match.url_name %}active{% endif %}">Datos del estudio</a>
             <span style="margin-left: auto; color: var(--text-secondary);">{{ user.email }}</span>
             <a href="{% url 'panel:logout' %}">Salir</a>
         {% endif %}
