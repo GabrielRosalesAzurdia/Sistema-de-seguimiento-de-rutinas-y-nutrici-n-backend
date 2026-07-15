@@ -46,10 +46,10 @@
     <div class="card">
         <h3 style="margin-top:0;">VD2 - Constancia Nutricional</h3>
         <table>
-            <thead><tr><th>Nombre</th><th>Días Activos</th><th>Ingresos</th><th>%</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Días planificados</th><th>Con registro</th><th>%</th></tr></thead>
             <tbody>
                 {% for m in metrics %}
-                <tr><td>{{ m.name }}</td><td>{{ m.days_active }}</td><td>{{ m.days_with_log }}</td><td>{{ m.vd2 }}%</td></tr>
+                <tr><td>{{ m.name }}</td><td>{{ m.planned_nutrition }}</td><td>{{ m.days_with_log }}</td><td>{{ m.vd2 }}%</td></tr>
                 {% empty %}
                 <tr><td colspan="4" style="color: var(--text-secondary);">Sin miembros en el estudio.</td></tr>
                 {% endfor %}

@@ -109,12 +109,12 @@ class StudyExportView(views.APIView):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="estudio_constancia.csv"'
         writer = csv.writer(response)
-        writer.writerow(["Nombre", "Sesiones planificadas", "Sesiones completadas", "VD1 %", "Días activos", "Días con registro nutricional", "VD2 %"])
+        writer.writerow(["Nombre", "Sesiones planificadas", "Sesiones completadas", "VD1 %", "Días planificados de dieta", "Días con registro nutricional", "VD2 %"])
 
         for m in compute_study_metrics(start, end):
             writer.writerow([
                 m["name"], m["planned"], m["completed"], m["vd1"],
-                m["days_active"], m["days_with_log"], m["vd2"],
+                m["planned_nutrition"], m["days_with_log"], m["vd2"],
             ])
 
         return response

@@ -34,6 +34,17 @@ class MyProgressPredictionView(views.APIView):
         ).count()
         nutrition_adherence = min(recent_nutrition_days / 30, 1.0)
 
+        # Una predicción por miembro por día: si ya se calculó una hoy
+        # (p. ej. el dashboard hace varias cargas/refrescos), se
+        # reutiliza en vez de crear una fila nueva en cada GET (antes
+        # esto inundaba la tabla de MLPrediction con filas RANDOM_FOREST
+        # repetidas — feedback de la prueba E2E).
+        today_prediction = MLPrediction.objects.filter(
+            member=member, created_at__date=timezone.localdate()
+        ).order_by("-created_at").first()
+        if today_prediction:
+            return Response(MLPredictionSerializer(today_prediction).data)
+
         result = predict_days_to_goal(member, training_adherence, nutrition_adherence)
 
         prediction = MLPrediction.objects.create(

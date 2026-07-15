@@ -5,10 +5,13 @@ el endpoint de exportación CSV (apps.tracking.views.StudyExportView) y
 la pantalla del panel "Datos del estudio" (apps.panel.views), para no
 duplicar la lógica en dos lugares.
 
-NOTA pendiente (ver CLAUDE.md sección 1 y 8): "sesiones planificadas"
-(denominador de VD1) todavía usa un placeholder (= sesiones
-completadas, o sea VD1 siempre 100%) hasta que se defina la fórmula
-operacional con el asesor.
+Definición operacional cerrada (ver CLAUDE.md sección 1 y 8): las
+"sesiones planificadas" (VD1) y "días planificados" (VD2) son la meta
+individual que el coach define por miembro al registrarlo
+(`Member.planned_training_days` / `Member.planned_nutrition_days`), no
+un valor calculado del calendario semanal. Si el miembro completa más
+de lo planificado, el % puede superar 100% (decisión de negocio: se
+considera una meta superada, no un error de datos).
 """
 from datetime import timedelta
 from django.db.models import Sum
@@ -35,14 +38,12 @@ def compute_study_metrics(start=None, end=None):
             nutrition_logs = nutrition_logs.filter(date__lte=end)
 
         completed = workouts.count()
-        # Placeholder: "planificadas" = completadas hasta cerrar la
-        # definición operacional real con el asesor.
-        planned = completed
+        planned = member.planned_training_days
         vd1 = round((completed / planned) * 100, 1) if planned else 0
 
-        days_active = workouts.count() or 0
         days_with_log = nutrition_logs.count()
-        vd2 = round((days_with_log / days_active) * 100, 1) if days_active else 0
+        planned_nutrition = member.planned_nutrition_days
+        vd2 = round((days_with_log / planned_nutrition) * 100, 1) if planned_nutrition else 0
 
         results.append({
             "member": member,
@@ -50,7 +51,7 @@ def compute_study_metrics(start=None, end=None):
             "planned": planned,
             "completed": completed,
             "vd1": vd1,
-            "days_active": days_active,
+            "planned_nutrition": planned_nutrition,
             "days_with_log": days_with_log,
             "vd2": vd2,
         })

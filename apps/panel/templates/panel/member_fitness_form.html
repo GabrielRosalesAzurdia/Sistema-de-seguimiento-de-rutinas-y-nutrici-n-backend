@@ -1,0 +1,39 @@
+{% extends "panel/base.html" %}
+{% block title %}Actualizar datos fitness{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 720px; margin: 0 auto;">
+    <h2 style="margin-top:0;">Actualizar datos fitness — {{ object.full_name }}</h2>
+    <p style="color: var(--text-secondary);">
+        Cada guardado crea un nuevo registro en "Registros de medidas corporales"
+        (historial que alimenta la gráfica de peso de la app) y recalcula
+        automáticamente % de grasa y % de agua corporal.
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        {% if form.errors %}
+            <p style="color: var(--danger);">Revisa los campos marcados.</p>
+        {% endif %}
+        <div class="form-grid">
+            {% for field in form %}
+            <div>
+                <label>{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<small style="color: var(--danger);">{{ field.errors|join:", " }}</small>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div style="margin-top: 24px; display:flex; gap: 12px;">
+            <button class="btn" style="background: var(--green);" type="submit">Guardar</button>
+            <a class="btn" style="background: #333; color:#fff;" href="{% url 'panel:members-list' %}">Cancelar</a>
+        </div>
+    </form>
+</div>
+<style>
+    .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .form-grid input, .form-grid select {
+        width: 100%; padding: 9px 10px; border-radius: 8px; border: none;
+        background: #141414; color: #fff;
+    }
+    .form-grid label { display:block; margin-bottom: 4px; color: var(--text-secondary); font-size: 0.9em; }
+</style>
+{% endblock %}

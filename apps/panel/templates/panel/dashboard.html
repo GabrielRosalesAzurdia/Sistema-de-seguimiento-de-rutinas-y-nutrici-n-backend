@@ -22,14 +22,14 @@
     <h3 style="margin-top:0;">Actividad Reciente de Miembros</h3>
     <table>
         <thead>
-            <tr><th>Nombre</th><th>Última sesión</th><th>Días de Nutrición</th><th>Meta</th></tr>
+            <tr><th>Nombre</th><th>Última sesión</th><th>Días de Nutrición (registrados/planificados)</th><th>Meta</th></tr>
         </thead>
         <tbody>
             {% for row in activity %}
             <tr>
                 <td>{{ row.member.full_name }}</td>
                 <td>{{ row.last_session|date:"Y-m-d"|default:"—" }}</td>
-                <td style="color: var(--green);">{{ row.days_with_log }}/{{ row.days_active|default:"0" }}</td>
+                <td style="color: var(--green);">{{ row.days_with_log }}/{{ row.planned_nutrition_days }}</td>
                 <td>{{ row.member.get_fitness_goal_display }}</td>
             </tr>
             {% empty %}

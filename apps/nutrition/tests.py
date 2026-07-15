@@ -16,7 +16,8 @@ class MyCurrentPlanViewTests(TestCase):
             username="miembro", email="miembro@test.com", password="pass1234"
         )
         self.member = Member.objects.create(
-            user=self.user, first_name="Ana", first_last_name="Test", age=25, height_cm="165.0"
+            user=self.user, first_name="Ana", first_last_name="Test", age=25, height_cm="165.0",
+            planned_training_days=20, planned_nutrition_days=30,
         )
         self.client = APIClient()
         self.client.force_authenticate(self.user)

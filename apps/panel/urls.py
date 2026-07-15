@@ -10,10 +10,11 @@ urlpatterns = [
     path("miembros/", views.MembersListView.as_view(), name="members-list"),
     path("miembros/agregar/", views.MemberCreateView.as_view(), name="member-create"),
     path("miembros/<int:pk>/editar/", views.MemberUpdateView.as_view(), name="member-update"),
+    path("miembros/<int:pk>/fitness/", views.MemberFitnessUpdateView.as_view(), name="member-fitness-update"),
     path("rutinas/", views.RoutinesListView.as_view(), name="routines-list"),
     path("rutinas/<str:category>/editar/", views.RoutineEditExercisesView.as_view(), name="routine-edit"),
     path("rutinas/calendario/", views.ScheduleUpdateView.as_view(), name="schedule-update"),
     path("nutricion/", views.NutritionReviewView.as_view(), name="nutrition-review"),
-    path("nutricion/<int:pk>/revisar/", views.NutritionPlanReviewActionView.as_view(), name="nutrition-plan-review"),
+    path("nutricion/<int:pk>/revisar/", views.NutritionPlanDetailView.as_view(), name="nutrition-plan-detail"),
     path("estudio/", views.StudyDataView.as_view(), name="study-data"),
 ]

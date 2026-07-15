@@ -1,22 +1,28 @@
 {% extends "panel/base.html" %}
+{% load static %}
 {% block title %}Iniciar sesión{% endblock %}
 {% block content %}
-<div class="card" style="max-width: 360px; margin: 60px auto;">
-    <h2 style="margin-top:0;">Iniciar sesión</h2>
-    <form method="post">
+<div class="card" style="max-width: 380px; margin: 60px auto; text-align:center;">
+    <img src="{% static 'panel/logo.png' %}" alt="Fitness Club" style="width:96px; height:96px; margin-bottom:12px;">
+    <h2 style="margin:0 0 4px;">Bienvenido</h2>
+    <p style="color: var(--text-secondary); margin-top:0;">Inicia sesión para acceder al panel</p>
+    <form method="post" style="text-align:left; margin-top:24px;">
         {% csrf_token %}
         {% if form.errors %}
             <p style="color: var(--danger);">Correo o contraseña incorrectos.</p>
         {% endif %}
         <p>
-            <label>Correo</label><br>
+            <label style="display:block; margin-bottom:4px; color: var(--text-secondary); font-size:0.9em;">Correo</label>
             {{ form.username }}
         </p>
         <p>
-            <label>Contraseña</label><br>
+            <label style="display:block; margin-bottom:4px; color: var(--text-secondary); font-size:0.9em;">Contraseña</label>
             {{ form.password }}
         </p>
-        <button class="btn" type="submit">Entrar</button>
+        <button class="btn" type="submit" style="width:100%; margin-top:8px;">Entrar</button>
     </form>
 </div>
+<style>
+    #id_username, #id_password { width: 100%; }
+</style>
 {% endblock %}

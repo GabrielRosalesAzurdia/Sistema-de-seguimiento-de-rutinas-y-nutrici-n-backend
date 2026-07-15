@@ -17,4 +17,4 @@ class MemberAdmin(admin.ModelAdmin):
         "next_payment_date", "is_paid", "is_active",
     ]
     list_filter = ["gender", "fitness_goal", "activity_level", "is_paid", "is_active"]
-    search_fields = ["first_name", "first_last_name", "email", "phone"]
+    search_fields = ["first_name", "first_last_name", "user__email", "phone"]

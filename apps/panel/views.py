@@ -1,20 +1,31 @@
 from django.contrib import messages
 from django.contrib.auth.views import LoginView, LogoutView
 from django.db.models import Q
+from django.forms import inlineformset_factory
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from django.views import View
 from django.views.generic import TemplateView, ListView, CreateView, UpdateView
 
-from apps.members.models import Member, Gender
+from apps.members.models import Member, Gender, User
 from apps.routines.models import (
     Routine, Exercise, RoutineExercise, RoutineCategory, ScheduledRoutineDay, Weekday,
 )
-from apps.nutrition.models import NutritionPlan
+from apps.nutrition.models import NutritionPlan, MealSuggestion
+from apps.tracking.models import BodyMeasurementLog
 from apps.tracking.services import compute_study_metrics
-from .forms import MemberForm
+from .forms import MemberPersonalDataForm, MemberFitnessUpdateForm
 from .mixins import CoachRequiredMixin
+from .utils import add_one_month
+
+MealSuggestionFormSet = inlineformset_factory(
+    NutritionPlan, MealSuggestion,
+    fields=["meal_time", "carbs_g", "protein_g", "fats_g", "calories",
+            "suggestion_1", "suggestion_2", "suggestion_3"],
+    extra=0, can_delete=False,
+)
 
 
 class PanelLoginView(LoginView):
@@ -54,7 +65,7 @@ class DashboardView(CoachRequiredMixin, TemplateView):
                 "member": member,
                 "last_session": last_session.completed_at if last_session else None,
                 "days_with_log": member.nutrition_logs.count(),
-                "days_active": member.workout_logs.count(),
+                "planned_nutrition_days": member.planned_nutrition_days,
             })
         context["activity"] = activity
         return context
@@ -75,7 +86,7 @@ class MembersListView(CoachRequiredMixin, ListView):
             qs = qs.filter(
                 Q(first_name__icontains=query)
                 | Q(first_last_name__icontains=query)
-                | Q(email__icontains=query)
+                | Q(user__email__icontains=query)
             )
         return qs
 
@@ -91,20 +102,49 @@ class MemberFormActionMixin:
     Desactivar Usuario) — todos reenvían el mismo form, distinguidos
     por el nombre del botón presionado."""
 
-    form_class = MemberForm
+    form_class = MemberPersonalDataForm
     template_name = "panel/member_form.html"
     success_url = reverse_lazy("panel:members-list")
 
     def form_valid(self, form):
+        if not form.instance.next_payment_date:
+            form.instance.next_payment_date = add_one_month(form.instance.start_date)
+
+        is_create = form.instance.pk is None
+        generated_password = None
+        if is_create:
+            generated_password = get_random_string(12)
+            user = User(
+                username=form.cleaned_data["email"],
+                email=form.cleaned_data["email"],
+                is_staff=False,
+            )
+            user.set_password(generated_password)
+            user.save()
+            form.instance.user = user
+        elif form.instance.user.email != form.cleaned_data["email"]:
+            form.instance.user.email = form.cleaned_data["email"]
+            form.instance.user.username = form.cleaned_data["email"]
+            form.instance.user.save()
+
         response = super().form_valid(form)
+
         if "mark_paid" in self.request.POST:
             self.object.is_paid = True
+            self.object.next_payment_date = add_one_month(timezone.localdate())
             self.object.save()
             messages.success(self.request, f"{self.object.full_name} marcado como pagado.")
         elif "deactivate" in self.request.POST:
             self.object.is_active = False
             self.object.save()
             messages.success(self.request, f"{self.object.full_name} desactivado.")
+        elif generated_password:
+            messages.success(
+                self.request,
+                f"{self.object.full_name} guardado. Contraseña temporal: "
+                f"{generated_password} — cópiala y compártela con el miembro, "
+                "no se volverá a mostrar.",
+            )
         else:
             messages.success(self.request, f"{self.object.full_name} guardado.")
         return response
@@ -118,6 +158,34 @@ class MemberUpdateView(MemberFormActionMixin, CoachRequiredMixin, UpdateView):
     """Pantalla 'Editar Miembro' (docs/mockups/admin_panel/03)."""
 
     model = Member
+
+
+class MemberFitnessUpdateView(CoachRequiredMixin, UpdateView):
+    """"Actualización de datos fitness": peso + medidas corporales.
+    A diferencia de editar datos personales, cada guardado crea un
+    `BodyMeasurementLog` nuevo (historial para la gráfica de peso de
+    la app) además de actualizar el snapshot en `Member`."""
+
+    model = Member
+    form_class = MemberFitnessUpdateForm
+    template_name = "panel/member_fitness_form.html"
+
+    def get_success_url(self):
+        return reverse_lazy("panel:members-list")
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        member = self.object
+        BodyMeasurementLog.objects.create(
+            member=member,
+            recorded_by=self.request.user,
+            date=timezone.localdate(),
+            weight_kg=member.current_weight_kg,
+            body_fat_percentage=member.body_fat_percentage,
+            body_water_percentage=member.body_water_percentage,
+        )
+        messages.success(self.request, f"Datos fitness de {member.full_name} actualizados.")
+        return response
 
 
 class RoutinesListView(CoachRequiredMixin, TemplateView):
@@ -208,27 +276,50 @@ class NutritionReviewView(CoachRequiredMixin, TemplateView):
         return context
 
 
-class NutritionPlanReviewActionView(CoachRequiredMixin, View):
-    """Aprobar/rechazar un plan pendiente — misma lógica de negocio
-    que apps.nutrition.views.ReviewNutritionPlanView (DRF), invocada
-    aquí desde un form POST del panel en vez de un PATCH del API."""
+class NutritionPlanDetailView(CoachRequiredMixin, View):
+    """Detalle de un plan nutricional (pendiente o aprobado): muestra
+    y permite editar las 5 comidas (macros + sugerencias de platillos)
+    antes de aprobar/rechazar — antes solo se veían los totales del
+    plan, sin forma de revisar/completar las sugerencias (feedback de
+    la prueba E2E)."""
+
+    template_name = "panel/nutrition_plan_detail.html"
+
+    def get(self, request, pk):
+        plan = get_object_or_404(NutritionPlan.objects.select_related("member"), pk=pk)
+        formset = MealSuggestionFormSet(instance=plan)
+        return render(request, self.template_name, {"plan": plan, "formset": formset})
 
     def post(self, request, pk):
-        plan = get_object_or_404(NutritionPlan, pk=pk)
+        plan = get_object_or_404(NutritionPlan.objects.select_related("member"), pk=pk)
         action = request.POST.get("action")
+        if action not in ("approve", "reject", "save"):
+            messages.error(request, "Acción no reconocida.")
+            return redirect("panel:nutrition-plan-detail", pk=plan.pk)
+
+        formset = MealSuggestionFormSet(request.POST, instance=plan)
+        if not formset.is_valid():
+            messages.error(request, "Revisa los datos de las comidas: hay campos inválidos.")
+            return render(request, self.template_name, {"plan": plan, "formset": formset})
+
+        formset.save()
         if action == "approve":
             plan.status = "APPROVED"
+            plan.reviewed_by = request.user
+            plan.reviewed_at = timezone.now()
+            plan.save()
+            messages.success(request, f"Plan de {plan.member.full_name} aprobado.")
+            return redirect("panel:nutrition-review")
         elif action == "reject":
             plan.status = "REJECTED"
-        else:
-            messages.error(request, "Acción no reconocida.")
+            plan.reviewed_by = request.user
+            plan.reviewed_at = timezone.now()
+            plan.save()
+            messages.success(request, f"Plan de {plan.member.full_name} rechazado.")
             return redirect("panel:nutrition-review")
 
-        plan.reviewed_by = request.user
-        plan.reviewed_at = timezone.now()
-        plan.save()
-        messages.success(request, f"Plan de {plan.member.full_name} actualizado.")
-        return redirect("panel:nutrition-review")
+        messages.success(request, "Comidas actualizadas.")
+        return redirect("panel:nutrition-plan-detail", pk=plan.pk)
 
 
 class StudyDataView(CoachRequiredMixin, TemplateView):

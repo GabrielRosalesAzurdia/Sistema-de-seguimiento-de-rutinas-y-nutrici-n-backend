@@ -31,7 +31,10 @@
                 <td>{{ member.get_fitness_goal_display }}</td>
                 <td>{{ member.start_date|date:"Y-m-d" }}</td>
                 <td>{{ member.next_payment_date|date:"Y-m-d"|default:"—" }}</td>
-                <td><a href="{% url 'panel:member-update' member.pk %}" style="color: var(--green);">✎ Editar</a></td>
+                <td>
+                    <a href="{% url 'panel:member-update' member.pk %}" style="color: var(--green);">✎ Editar</a>
+                    · <a href="{% url 'panel:member-fitness-update' member.pk %}" style="color: var(--yellow);">Datos fitness</a>
+                </td>
             </tr>
             {% empty %}
             <tr><td colspan="6" style="color: var(--text-secondary);">Sin miembros todavía.</td></tr>

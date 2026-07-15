@@ -3,6 +3,10 @@
 {% block content %}
 <div class="card" style="max-width: 720px; margin: 0 auto;">
     <h2 style="margin-top:0;">{% if object %}Editar Miembro{% else %}Agregar Miembro{% endif %}</h2>
+    {% if not object %}
+    <p style="color: var(--text-secondary);">Al guardar se crea la cuenta de acceso a la app del miembro con una
+        contraseña temporal generada automáticamente (se muestra una sola vez).</p>
+    {% endif %}
     <form method="post">
         {% csrf_token %}
         {% if form.errors %}
@@ -12,7 +16,7 @@
         <h3>Datos Personales</h3>
         <div class="form-grid">
             {% for field in form %}
-                {% if field.name in "first_name,second_name,phone,first_last_name,second_last_name,age,email,start_date" %}
+                {% if field.name in "first_name,second_name,first_last_name,second_last_name,email,phone,age,gender,height_cm" %}
                 <div>
                     <label>{{ field.label }}</label>
                     {{ field }}
@@ -22,10 +26,10 @@
             {% endfor %}
         </div>
 
-        <h3>Datos Físicos</h3>
+        <h3>Objetivo y Metas</h3>
         <div class="form-grid">
             {% for field in form %}
-                {% if field.name not in "first_name,second_name,phone,first_last_name,second_last_name,age,email,start_date,next_payment_date" %}
+                {% if field.name in "goal_weight_kg,fitness_goal,activity_level,planned_training_days,planned_nutrition_days" %}
                 <div>
                     <label>{{ field.label }}</label>
                     {{ field }}
@@ -38,19 +42,32 @@
         <h3>Membresía</h3>
         <div class="form-grid">
             <div>
+                <label>{{ form.start_date.label }}</label>
+                {{ form.start_date }}
+            </div>
+            <div>
                 <label>{{ form.next_payment_date.label }}</label>
                 {{ form.next_payment_date }}
+                <small style="color: var(--text-secondary);">Vacío = se calcula automáticamente (inicio + 1 mes).</small>
             </div>
         </div>
 
         <div style="margin-top: 24px; display:flex; gap: 12px;">
             <button class="btn" style="background: var(--green);" type="submit" name="save">Guardar</button>
-            <button class="btn" type="submit" name="mark_paid">Pagado</button>
             {% if object %}
+            <button class="btn" type="submit" name="mark_paid">Pagado</button>
             <button class="btn" style="background: var(--orange); color:#000;" type="submit" name="deactivate">Desactivar Usuario</button>
             {% endif %}
+            <a class="btn" style="background: #333; color:#fff;" href="{% url 'panel:members-list' %}">Cancelar</a>
         </div>
     </form>
+    {% if object %}
+    <p style="margin-top:16px;">
+        <a href="{% url 'panel:member-fitness-update' object.pk %}" style="color: var(--yellow);">
+            → Actualizar datos fitness (peso y medidas corporales)
+        </a>
+    </p>
+    {% endif %}
 </div>
 <style>
     .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }

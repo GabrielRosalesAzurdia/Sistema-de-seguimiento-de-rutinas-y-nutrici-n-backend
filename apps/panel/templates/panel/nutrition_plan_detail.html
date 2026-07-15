@@ -1,0 +1,75 @@
+{% extends "panel/base.html" %}
+{% block title %}Revisar plan nutricional{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+    <h2 style="margin-top:0;">Plan de {{ plan.member.full_name }}</h2>
+    <p style="color: var(--text-secondary);">
+        Estado: <strong>{{ plan.get_status_display }}</strong> ·
+        Totales: {{ plan.total_calories }} kcal ·
+        P {{ plan.protein_g }}g · C {{ plan.carbs_g }}g · G {{ plan.fats_g }}g
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ formset.management_form }}
+        {% if formset.non_form_errors %}
+            <p style="color: var(--danger);">{{ formset.non_form_errors }}</p>
+        {% endif %}
+
+        {% for meal_form in formset %}
+        <div class="card" style="background:#141414; margin-bottom:14px;">
+            <h3 style="margin-top:0;">{{ meal_form.instance.get_meal_time_display }}</h3>
+            {{ meal_form.id }}
+            <div class="form-grid">
+                <div>
+                    <label>Calorías</label>
+                    {{ meal_form.calories }}
+                </div>
+                <div>
+                    <label>Proteína (g)</label>
+                    {{ meal_form.protein_g }}
+                </div>
+                <div>
+                    <label>Carbohidratos (g)</label>
+                    {{ meal_form.carbs_g }}
+                </div>
+                <div>
+                    <label>Grasas (g)</label>
+                    {{ meal_form.fats_g }}
+                </div>
+            </div>
+            <div class="form-grid">
+                <div>
+                    <label>Sugerencia 1</label>
+                    {{ meal_form.suggestion_1 }}
+                </div>
+                <div>
+                    <label>Sugerencia 2</label>
+                    {{ meal_form.suggestion_2 }}
+                </div>
+                <div>
+                    <label>Sugerencia 3</label>
+                    {{ meal_form.suggestion_3 }}
+                </div>
+            </div>
+            {% if meal_form.errors %}<small style="color: var(--danger);">{{ meal_form.errors }}</small>{% endif %}
+        </div>
+        {% endfor %}
+
+        <div style="margin-top: 24px; display:flex; gap: 12px;">
+            <button class="btn" style="background: var(--green);" type="submit" name="action" value="approve">Aprobar</button>
+            <button class="btn" style="background: var(--danger);" type="submit" name="action" value="reject">Rechazar</button>
+            <button class="btn" type="submit" name="action" value="save">Guardar sin aprobar</button>
+            <a class="btn" style="background: #333; color:#fff;" href="{% url 'panel:nutrition-review' %}">Cancelar</a>
+        </div>
+    </form>
+</div>
+<style>
+    .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
+    .form-grid input {
+        width: 100%; padding: 8px 10px; border-radius: 8px; border: none;
+        background: #1E1E1E; color: #fff;
+    }
+    .form-grid label { display:block; margin-bottom: 4px; color: var(--text-secondary); font-size: 0.85em; }
+</style>
+{% endblock %}

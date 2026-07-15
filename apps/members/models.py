@@ -70,12 +70,14 @@ class Member(models.Model):
     """
 
     # --- Cuenta / autenticación de la app ---
+    # Todo miembro tiene sí o sí una cuenta de login (el panel la crea
+    # junto con el miembro, con contraseña autogenerada) — el correo
+    # vive únicamente en `user.email`, no hay un `Member.email`
+    # separado que pueda divergir (ver `email` property abajo).
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="member_profile",
-        null=True,
-        blank=True,
         help_text="Cuenta de autenticación ligada a este miembro (login en la app).",
     )
 
@@ -84,7 +86,6 @@ class Member(models.Model):
     second_name = models.CharField("Segundo nombre", max_length=100, blank=True)
     first_last_name = models.CharField("Primer apellido", max_length=100)
     second_last_name = models.CharField("Segundo apellido", max_length=100, blank=True)
-    email = models.EmailField("Correo", blank=True)
     phone = models.CharField("Teléfono", max_length=20, blank=True)
     age = models.PositiveSmallIntegerField("Edad")
     height_cm = models.DecimalField("Altura (cm)", max_digits=5, decimal_places=1)
@@ -109,16 +110,36 @@ class Member(models.Model):
         "% Agua corporal", max_digits=4, decimal_places=1, null=True, blank=True,
         help_text="Calculado por el sistema a partir de medidas registradas por el coach.",
     )
-    left_arm_cm = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
-    right_arm_cm = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
-    left_leg_cm = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
-    right_leg_cm = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
-    left_calf_cm = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
-    right_calf_cm = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
-    hip_cm = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
-    back_cm = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
-    chest_cm = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
-    waist_cm = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
+    left_arm_cm = models.DecimalField(
+        "Brazo izquierdo (cm)", max_digits=5, decimal_places=1, null=True, blank=True
+    )
+    right_arm_cm = models.DecimalField(
+        "Brazo derecho (cm)", max_digits=5, decimal_places=1, null=True, blank=True
+    )
+    left_leg_cm = models.DecimalField(
+        "Pierna izquierda (cm)", max_digits=5, decimal_places=1, null=True, blank=True
+    )
+    right_leg_cm = models.DecimalField(
+        "Pierna derecha (cm)", max_digits=5, decimal_places=1, null=True, blank=True
+    )
+    left_calf_cm = models.DecimalField(
+        "Pantorrilla izquierda (cm)", max_digits=5, decimal_places=1, null=True, blank=True
+    )
+    right_calf_cm = models.DecimalField(
+        "Pantorrilla derecha (cm)", max_digits=5, decimal_places=1, null=True, blank=True
+    )
+    hip_cm = models.DecimalField(
+        "Cadera (cm)", max_digits=5, decimal_places=1, null=True, blank=True
+    )
+    back_cm = models.DecimalField(
+        "Espalda (cm)", max_digits=5, decimal_places=1, null=True, blank=True
+    )
+    chest_cm = models.DecimalField(
+        "Pecho (cm)", max_digits=5, decimal_places=1, null=True, blank=True
+    )
+    waist_cm = models.DecimalField(
+        "Cintura (cm)", max_digits=5, decimal_places=1, null=True, blank=True
+    )
     neck_cm = models.DecimalField(
         "Cuello (cm)", max_digits=5, decimal_places=1, null=True, blank=True,
         help_text="Requerido para calcular % de grasa corporal (U.S. Navy Method).",
@@ -137,6 +158,20 @@ class Member(models.Model):
     next_payment_date = models.DateField("Siguiente pago", null=True, blank=True)
     is_paid = models.BooleanField("Pagado", default=False)
     is_active = models.BooleanField("Activo", default=True)
+
+    # --- Metas individuales de constancia (VD1/VD2 de la tesis) ---
+    # El coach las define al registrar al miembro: cuántos días planea
+    # entrenar / seguir la dieta durante su participación en el
+    # sistema. Son el denominador real de "% constancia" (si el
+    # miembro rebasa su meta, el % puede superar 100% — no se limita).
+    planned_training_days = models.PositiveSmallIntegerField(
+        "Días planificados de rutina",
+        help_text="Meta individual de días de entrenamiento definida por el coach.",
+    )
+    planned_nutrition_days = models.PositiveSmallIntegerField(
+        "Días planificados de dieta",
+        help_text="Meta individual de días de seguimiento nutricional definida por el coach.",
+    )
 
     # --- Consentimiento informado (viabilidad operacional del estudio) ---
     informed_consent_signed = models.BooleanField(
@@ -175,6 +210,12 @@ class Member(models.Model):
     def full_name(self):
         parts = [self.first_name, self.second_name, self.first_last_name, self.second_last_name]
         return " ".join(p for p in parts if p)
+
+    @property
+    def email(self):
+        """Correo único del miembro — vive en `user.email` (login),
+        no hay un campo `Member.email` separado que pueda divergir."""
+        return self.user.email
 
     @property
     def imc(self):

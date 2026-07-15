@@ -27,14 +27,7 @@
                     <td>{{ plan.carbs_g }}</td>
                     <td>{{ plan.protein_g }}</td>
                     <td style="white-space:nowrap;">
-                        <form method="post" action="{% url 'panel:nutrition-plan-review' plan.pk %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button name="action" value="reject" class="btn" style="background: var(--danger); padding:4px 10px;">✕</button>
-                        </form>
-                        <form method="post" action="{% url 'panel:nutrition-plan-review' plan.pk %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button name="action" value="approve" class="btn" style="background: var(--green); padding:4px 10px;">✓</button>
-                        </form>
+                        <a href="{% url 'panel:nutrition-plan-detail' plan.pk %}" class="btn" style="padding:4px 10px;">Revisar</a>
                     </td>
                 </tr>
                 {% empty %}
@@ -47,7 +40,7 @@
     <div class="card">
         <h3 style="margin-top:0;">Dietas Aprobadas y en Seguimiento</h3>
         <table>
-            <thead><tr><th>Nombre</th><th>G</th><th>C</th><th>P</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>G</th><th>C</th><th>P</th><th></th></tr></thead>
             <tbody>
                 {% for plan in approved %}
                 <tr>
@@ -55,9 +48,10 @@
                     <td>{{ plan.fats_g }}</td>
                     <td>{{ plan.carbs_g }}</td>
                     <td>{{ plan.protein_g }}</td>
+                    <td><a href="{% url 'panel:nutrition-plan-detail' plan.pk %}" style="color: var(--text-secondary);">Ver</a></td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="4" style="color: var(--text-secondary);">Sin dietas aprobadas todavía.</td></tr>
+                <tr><td colspan="5" style="color: var(--text-secondary);">Sin dietas aprobadas todavía.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

@@ -24,6 +24,10 @@ class WorkoutSessionLogSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         entries_data = validated_data.pop("exercise_entries")
         member = self.context["request"].user.member_profile
+        # calories_burned se deriva siempre de la rutina (el cliente
+        # móvil no lo envía, y aunque lo hiciera, la fuente de verdad
+        # es la calorías estimadas de la rutina completada).
+        validated_data["calories_burned"] = validated_data["routine"].estimated_calories
         session = WorkoutSessionLog.objects.create(member=member, **validated_data)
         for entry in entries_data:
             WorkoutExerciseEntry.objects.create(session=session, **entry)
