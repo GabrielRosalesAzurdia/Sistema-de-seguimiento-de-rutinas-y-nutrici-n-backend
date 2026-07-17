@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib import messages
 from django.contrib.auth.views import LoginView, LogoutView
 from django.db.models import Q
@@ -14,6 +16,7 @@ from apps.routines.models import (
     Routine, Exercise, RoutineExercise, RoutineCategory, ScheduledRoutineDay, Weekday,
 )
 from apps.nutrition.models import NutritionPlan, MealSuggestion
+from apps.nutrition.services import IncompleteProfileError, generate_plan_for_member
 from apps.tracking.models import BodyMeasurementLog
 from apps.tracking.services import compute_study_metrics
 from .forms import MemberPersonalDataForm, MemberFitnessUpdateForm
@@ -22,7 +25,12 @@ from .utils import add_one_month
 
 MealSuggestionFormSet = inlineformset_factory(
     NutritionPlan, MealSuggestion,
-    fields=["meal_time", "carbs_g", "protein_g", "fats_g", "calories",
+    # "meal_time" no se incluye: identifica la comida (Desayuno, Almuerzo...)
+    # y nunca se edita — el template solo lo muestra de solo lectura. Si se
+    # incluye aquí, el formset lo exige como campo del POST y el template no
+    # lo renderiza, por lo que SIEMPRE falla con "Este campo es requerido"
+    # y bloquea Aprobar/Rechazar/Guardar sin importar los datos ya en BD.
+    fields=["carbs_g", "protein_g", "fats_g", "calories",
             "suggestion_1", "suggestion_2", "suggestion_3"],
     extra=0, can_delete=False,
 )
@@ -98,19 +106,24 @@ class MembersListView(CoachRequiredMixin, ListView):
 
 class MemberFormActionMixin:
     """Botones compartidos por 'Agregar'/'Editar Miembro'
-    (docs/mockups/admin_panel/03 y 04): Guardar / Pagado / (editar:
-    Desactivar Usuario) — todos reenvían el mismo form, distinguidos
-    por el nombre del botón presionado."""
+    (docs/mockups/admin_panel/03 y 04): Guardar / Pagado — todos
+    reenvían el mismo form, distinguidos por el nombre del botón
+    presionado. "Desactivar"/"Reactivar" viven en MemberToggleActiveView
+    (fuera de este form: no deben depender de pasar la validación
+    completa de datos personales, ver feedback de la prueba E2E)."""
 
     form_class = MemberPersonalDataForm
     template_name = "panel/member_form.html"
     success_url = reverse_lazy("panel:members-list")
 
     def form_valid(self, form):
-        if not form.instance.next_payment_date:
+        is_create = form.instance.pk is None
+        if is_create and not form.instance.next_payment_date:
+            # Solo se autocalcula al crear — en ediciones posteriores
+            # next_payment_date/last_payment_date solo cambian al marcar
+            # "Pagado" (ver abajo), nunca por re-guardar datos personales.
             form.instance.next_payment_date = add_one_month(form.instance.start_date)
 
-        is_create = form.instance.pk is None
         generated_password = None
         if is_create:
             generated_password = get_random_string(12)
@@ -118,6 +131,7 @@ class MemberFormActionMixin:
                 username=form.cleaned_data["email"],
                 email=form.cleaned_data["email"],
                 is_staff=False,
+                must_change_password=True,
             )
             user.set_password(generated_password)
             user.save()
@@ -131,20 +145,15 @@ class MemberFormActionMixin:
 
         if "mark_paid" in self.request.POST:
             self.object.is_paid = True
-            self.object.next_payment_date = add_one_month(timezone.localdate())
+            self.object.last_payment_date = timezone.localdate()
+            self.object.next_payment_date = add_one_month(self.object.last_payment_date)
             self.object.save()
             messages.success(self.request, f"{self.object.full_name} marcado como pagado.")
-        elif "deactivate" in self.request.POST:
-            self.object.is_active = False
-            self.object.save()
-            messages.success(self.request, f"{self.object.full_name} desactivado.")
         elif generated_password:
             messages.success(
-                self.request,
-                f"{self.object.full_name} guardado. Contraseña temporal: "
-                f"{generated_password} — cópiala y compártela con el miembro, "
-                "no se volverá a mostrar.",
+                self.request, generated_password, extra_tags="temp-password"
             )
+            messages.success(self.request, f"{self.object.full_name} guardado.")
         else:
             messages.success(self.request, f"{self.object.full_name} guardado.")
         return response
@@ -158,6 +167,27 @@ class MemberUpdateView(MemberFormActionMixin, CoachRequiredMixin, UpdateView):
     """Pantalla 'Editar Miembro' (docs/mockups/admin_panel/03)."""
 
     model = Member
+
+
+class MemberToggleActiveView(CoachRequiredMixin, View):
+    """Desactivar/reactivar un miembro — vista dedicada, POST-only, que
+    NO depende de MemberPersonalDataForm en absoluto (antes reutilizaba
+    el form completo de Editar Miembro, forzando a pasar su validación
+    solo para desactivar a alguien, ver feedback de la prueba E2E).
+    Desactiva tanto Member.is_active (visibilidad/estado en el panel)
+    como User.is_active (bloquea el login en la app — antes solo se
+    tocaba Member.is_active y el miembro "desactivado" seguía pudiendo
+    loguearse)."""
+
+    def post(self, request, pk, activate):
+        member = get_object_or_404(Member, pk=pk)
+        member.is_active = activate
+        member.user.is_active = activate
+        member.user.save(update_fields=["is_active"])
+        member.save(update_fields=["is_active"])
+        action = "reactivado" if activate else "desactivado"
+        messages.success(request, f"{member.full_name} {action}.")
+        return redirect("panel:members-list")
 
 
 class MemberFitnessUpdateView(CoachRequiredMixin, UpdateView):
@@ -176,6 +206,7 @@ class MemberFitnessUpdateView(CoachRequiredMixin, UpdateView):
     def form_valid(self, form):
         response = super().form_valid(form)
         member = self.object
+        is_first_weight = not member.nutrition_plans.exists()
         BodyMeasurementLog.objects.create(
             member=member,
             recorded_by=self.request.user,
@@ -185,6 +216,19 @@ class MemberFitnessUpdateView(CoachRequiredMixin, UpdateView):
             body_water_percentage=member.body_water_percentage,
         )
         messages.success(self.request, f"Datos fitness de {member.full_name} actualizados.")
+        # Dieta automática al primer peso registrado: el peso no existe
+        # todavía al crear el miembro (se ingresa aparte, aquí), así que
+        # este es el punto real donde ya se puede calcular la heurística.
+        if is_first_weight:
+            try:
+                generate_plan_for_member(member)
+                messages.success(
+                    self.request,
+                    f"Se generó una dieta sugerida para {member.full_name}, "
+                    "pendiente de tu revisión en Nutrición.",
+                )
+            except IncompleteProfileError:
+                pass
         return response
 
 
@@ -265,7 +309,27 @@ class NutritionReviewView(CoachRequiredMixin, TemplateView):
 
     template_name = "panel/nutrition_review.html"
 
+    def _expire_stale_plans(self):
+        """Chequeo lazy de vigencia mensual (no hay cron en el proyecto):
+        cada vez que el coach abre esta pantalla, cualquier plan
+        aprobado con más de 30 días desde su revisión, y que no tenga
+        ya un sucesor pendiente, dispara la generación automática de
+        un reemplazo."""
+        cutoff = timezone.now() - timedelta(days=30)
+        members_with_pending = NutritionPlan.objects.filter(
+            status="PENDING_REVIEW"
+        ).values("member_id")
+        expirable = NutritionPlan.objects.filter(
+            status="APPROVED", is_current=True, reviewed_at__lte=cutoff,
+        ).exclude(member_id__in=members_with_pending).select_related("member")
+        for plan in expirable:
+            try:
+                generate_plan_for_member(plan.member)
+            except IncompleteProfileError:
+                continue
+
     def get_context_data(self, **kwargs):
+        self._expire_stale_plans()
         context = super().get_context_data(**kwargs)
         context["pending"] = NutritionPlan.objects.filter(
             status="PENDING_REVIEW"
@@ -274,6 +338,36 @@ class NutritionReviewView(CoachRequiredMixin, TemplateView):
             status="APPROVED"
         ).select_related("member").order_by("-created_at")
         return context
+
+
+class GenerateNutritionPlanView(CoachRequiredMixin, View):
+    """Botón 'Generar nueva dieta' por miembro (pantalla Editar
+    Miembro) — dispara la heurística manualmente, sin esperar al
+    primer registro de peso o al vencimiento mensual."""
+
+    def post(self, request, pk):
+        member = get_object_or_404(Member, pk=pk)
+        had_pending = member.nutrition_plans.filter(status="PENDING_REVIEW").exists()
+        try:
+            plan = generate_plan_for_member(member)
+        except IncompleteProfileError:
+            messages.error(
+                request,
+                f"No se puede generar una dieta para {member.full_name}: "
+                "faltan datos de peso, altura, edad o género. Completa "
+                "'Actualizar datos fitness' primero.",
+            )
+            return redirect("panel:member-update", pk=member.pk)
+        if had_pending:
+            messages.info(
+                request,
+                f"{member.full_name} ya tenía un plan pendiente de revisión.",
+            )
+        else:
+            messages.success(
+                request, f"Se generó una nueva dieta sugerida para {member.full_name}."
+            )
+        return redirect("panel:nutrition-plan-detail", pk=plan.pk)
 
 
 class NutritionPlanDetailView(CoachRequiredMixin, View):
@@ -288,13 +382,23 @@ class NutritionPlanDetailView(CoachRequiredMixin, View):
     def get(self, request, pk):
         plan = get_object_or_404(NutritionPlan.objects.select_related("member"), pk=pk)
         formset = MealSuggestionFormSet(instance=plan)
-        return render(request, self.template_name, {"plan": plan, "formset": formset})
+        successor = None
+        if plan.status == "REJECTED":
+            successor = NutritionPlan.objects.filter(
+                member=plan.member, status="PENDING_REVIEW"
+            ).order_by("-created_at").first()
+        return render(request, self.template_name, {
+            "plan": plan, "formset": formset, "successor": successor,
+        })
 
     def post(self, request, pk):
         plan = get_object_or_404(NutritionPlan.objects.select_related("member"), pk=pk)
         action = request.POST.get("action")
         if action not in ("approve", "reject", "save"):
             messages.error(request, "Acción no reconocida.")
+            return redirect("panel:nutrition-plan-detail", pk=plan.pk)
+        if action == "approve" and plan.status == "APPROVED":
+            messages.error(request, "Este plan ya está aprobado.")
             return redirect("panel:nutrition-plan-detail", pk=plan.pk)
 
         formset = MealSuggestionFormSet(request.POST, instance=plan)
@@ -303,21 +407,34 @@ class NutritionPlanDetailView(CoachRequiredMixin, View):
             return render(request, self.template_name, {"plan": plan, "formset": formset})
 
         formset.save()
+        plan.recompute_totals_from_meals()
+
         if action == "approve":
             plan.status = "APPROVED"
             plan.reviewed_by = request.user
             plan.reviewed_at = timezone.now()
+            plan.is_current = True
             plan.save()
+            NutritionPlan.objects.filter(member=plan.member).exclude(pk=plan.pk).update(is_current=False)
             messages.success(request, f"Plan de {plan.member.full_name} aprobado.")
             return redirect("panel:nutrition-review")
         elif action == "reject":
             plan.status = "REJECTED"
             plan.reviewed_by = request.user
             plan.reviewed_at = timezone.now()
+            plan.is_current = False
             plan.save()
             messages.success(request, f"Plan de {plan.member.full_name} rechazado.")
+            try:
+                generate_plan_for_member(plan.member)
+                messages.success(
+                    request, f"Se generó una nueva dieta sugerida para {plan.member.full_name}."
+                )
+            except IncompleteProfileError:
+                pass
             return redirect("panel:nutrition-review")
 
+        plan.save()
         messages.success(request, "Comidas actualizadas.")
         return redirect("panel:nutrition-plan-detail", pk=plan.pk)
 

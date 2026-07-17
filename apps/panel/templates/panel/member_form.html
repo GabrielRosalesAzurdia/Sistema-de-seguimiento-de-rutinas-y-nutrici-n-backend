@@ -56,17 +56,31 @@
             <button class="btn" style="background: var(--green);" type="submit" name="save">Guardar</button>
             {% if object %}
             <button class="btn" type="submit" name="mark_paid">Pagado</button>
-            <button class="btn" style="background: var(--orange); color:#000;" type="submit" name="deactivate">Desactivar Usuario</button>
             {% endif %}
             <a class="btn" style="background: #333; color:#fff;" href="{% url 'panel:members-list' %}">Cancelar</a>
         </div>
     </form>
     {% if object %}
-    <p style="margin-top:16px;">
+    <div style="margin-top:16px; display:flex; flex-direction:column; gap:10px; align-items:flex-start;">
         <a href="{% url 'panel:member-fitness-update' object.pk %}" style="color: var(--yellow);">
             → Actualizar datos fitness (peso y medidas corporales)
         </a>
-    </p>
+        <form method="post" action="{% url 'panel:nutrition-plan-generate' object.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn" style="background: var(--green);">Generar nueva dieta</button>
+        </form>
+        {% if object.is_active %}
+        <form method="post" action="{% url 'panel:member-deactivate' object.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn" style="background: var(--orange); color:#000;">Desactivar Usuario</button>
+        </form>
+        {% else %}
+        <form method="post" action="{% url 'panel:member-reactivate' object.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn" style="background: var(--green);">Reactivar Usuario</button>
+        </form>
+        {% endif %}
+    </div>
     {% endif %}
 </div>
 <style>

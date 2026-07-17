@@ -17,6 +17,11 @@ class User(AbstractUser):
     Se usa email como identificador de login en ambos casos.
     """
     email = models.EmailField(unique=True)
+    must_change_password = models.BooleanField(
+        "Debe cambiar su contraseña", default=False,
+        help_text="True mientras el usuario siga usando la contraseña "
+                   "temporal generada por el panel al darlo de alta.",
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
@@ -156,6 +161,11 @@ class Member(models.Model):
     # --- Membresía / pagos (solo panel admin) ---
     start_date = models.DateField("Fecha de inicio", default=timezone.now)
     next_payment_date = models.DateField("Siguiente pago", null=True, blank=True)
+    last_payment_date = models.DateField(
+        "Último pago registrado", null=True, blank=True,
+        help_text="Se actualiza automáticamente al marcar 'Pagado'. Si es "
+                   "nulo, el miembro nunca ha sido marcado como pagado.",
+    )
     is_paid = models.BooleanField("Pagado", default=False)
     is_active = models.BooleanField("Activo", default=True)
 
@@ -216,6 +226,23 @@ class Member(models.Model):
         """Correo único del miembro — vive en `user.email` (login),
         no hay un campo `Member.email` separado que pueda divergir."""
         return self.user.email
+
+    @property
+    def payment_status_display(self):
+        """Fecha de próximo pago ya formateada (YYYY-MM-DD) para mostrar
+        en el panel, o el string "PENDIENTE DE PAGO" si el miembro nunca
+        ha pagado o si la fecha de próximo pago ya llegó/pasó — evita
+        mostrar una fecha vencida o confusa como "1/0" (feedback de la
+        prueba E2E). Devuelve siempre un string (no un date) para poder
+        renderizarse directo en templates sin el filtro |date."""
+        today = timezone.localdate()
+        if (
+            self.last_payment_date is None
+            or self.next_payment_date is None
+            or self.next_payment_date <= today
+        ):
+            return "PENDIENTE DE PAGO"
+        return self.next_payment_date.strftime("%Y-%m-%d")
 
     @property
     def imc(self):

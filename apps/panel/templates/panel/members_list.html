@@ -25,15 +25,26 @@
         </thead>
         <tbody>
             {% for member in members %}
-            <tr>
-                <td>{{ member.full_name }}</td>
+            <tr class="{% if not member.is_active %}dim{% endif %}">
+                <td>{{ member.full_name }}{% if not member.is_active %} <small>(inactivo)</small>{% endif %}</td>
                 <td>{{ member.age }}</td>
                 <td>{{ member.get_fitness_goal_display }}</td>
                 <td>{{ member.start_date|date:"Y-m-d" }}</td>
-                <td>{{ member.next_payment_date|date:"Y-m-d"|default:"—" }}</td>
+                <td>{{ member.payment_status_display }}</td>
                 <td>
                     <a href="{% url 'panel:member-update' member.pk %}" style="color: var(--green);">✎ Editar</a>
+                    {% if member.is_active %}
                     · <a href="{% url 'panel:member-fitness-update' member.pk %}" style="color: var(--yellow);">Datos fitness</a>
+                    · <form method="post" action="{% url 'panel:member-deactivate' member.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="logout-link" style="color: var(--danger);">Desactivar</button>
+                    </form>
+                    {% else %}
+                    · <form method="post" action="{% url 'panel:member-reactivate' member.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="logout-link" style="color: var(--green);">Reactivar</button>
+                    </form>
+                    {% endif %}
                 </td>
             </tr>
             {% empty %}

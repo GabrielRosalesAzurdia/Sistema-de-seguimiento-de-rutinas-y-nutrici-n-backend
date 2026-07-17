@@ -8,6 +8,12 @@
         Totales: {{ plan.total_calories }} kcal ·
         P {{ plan.protein_g }}g · C {{ plan.carbs_g }}g · G {{ plan.fats_g }}g
     </p>
+    {% if plan.status == "REJECTED" and successor %}
+    <p style="color: var(--yellow);">
+        Ya se generó un plan sucesor pendiente de revisión —
+        <a href="{% url 'panel:nutrition-plan-detail' successor.pk %}" style="text-decoration: underline;">ir al plan sucesor</a>.
+    </p>
+    {% endif %}
 
     <form method="post">
         {% csrf_token %}
@@ -57,9 +63,14 @@
         {% endfor %}
 
         <div style="margin-top: 24px; display:flex; gap: 12px;">
+            {% if plan.status == "PENDING_REVIEW" %}
             <button class="btn" style="background: var(--green);" type="submit" name="action" value="approve">Aprobar</button>
             <button class="btn" style="background: var(--danger);" type="submit" name="action" value="reject">Rechazar</button>
             <button class="btn" type="submit" name="action" value="save">Guardar sin aprobar</button>
+            {% elif plan.status == "APPROVED" %}
+            <button class="btn" style="background: var(--danger);" type="submit" name="action" value="reject">Rechazar</button>
+            <button class="btn" type="submit" name="action" value="save">Guardar</button>
+            {% endif %}
             <a class="btn" style="background: #333; color:#fff;" href="{% url 'panel:nutrition-review' %}">Cancelar</a>
         </div>
     </form>

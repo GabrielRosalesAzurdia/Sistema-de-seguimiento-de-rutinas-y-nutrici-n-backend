@@ -62,6 +62,22 @@
             background: none; border: none; padding: 0; font: inherit;
             color: inherit; cursor: pointer; text-decoration: none;
         }
+        tr.dim { opacity: 0.45; }
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 100; padding: 20px;
+        }
+        .modal-box {
+            background: var(--surface); border: 2px solid var(--yellow);
+            border-radius: 12px; padding: 28px; max-width: 420px; text-align: center;
+        }
+        .modal-box h3 { margin-top: 0; color: var(--yellow); }
+        .modal-box code {
+            display: block; font-size: 1.4em; padding: 12px; margin: 16px 0;
+            background: #141414; border-radius: 8px; letter-spacing: 1px;
+            word-break: break-all;
+        }
         input, select, textarea {
             background: #141414;
             color: #FFFFFF;
@@ -96,10 +112,27 @@
     <main>
         {% if messages %}
             <ul class="messages">
-                {% for message in messages %}<li>{{ message }}</li>{% endfor %}
+                {% for message in messages %}
+                    {% if "temp-password" not in message.extra_tags %}<li>{{ message }}</li>{% endif %}
+                {% endfor %}
             </ul>
         {% endif %}
         {% block content %}{% endblock %}
     </main>
+    {% for message in messages %}
+        {% if "temp-password" in message.extra_tags %}
+        <div class="modal-overlay" id="temp-password-modal">
+            <div class="modal-box">
+                <h3>Contraseña temporal generada</h3>
+                <p>Cópiala y compártela con el miembro por tu medio habitual — no se volverá a mostrar.</p>
+                <code id="temp-password-value">{{ message }}</code>
+                <div style="display:flex; gap:12px; justify-content:center;">
+                    <button type="button" class="btn" onclick="navigator.clipboard.writeText(document.getElementById('temp-password-value').textContent)">Copiar</button>
+                    <button type="button" class="btn" style="background:#333; color:#fff;" onclick="document.getElementById('temp-password-modal').remove()">Cerrar</button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
 </body>
 </html>

@@ -1,5 +1,5 @@
 from django import forms
-from apps.members.models import Member
+from apps.members.models import Member, User
 
 
 class MemberPersonalDataForm(forms.ModelForm):
@@ -33,6 +33,17 @@ class MemberPersonalDataForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk and self.instance.user_id:
             self.fields["email"].initial = self.instance.user.email
+            # La fecha de inicio (fecha en que el miembro se unió al gym)
+            # no debe volver a pedirse ni poder cambiarse después de
+            # creado el miembro (feedback de la prueba E2E) — Django
+            # repuebla el valor desde la instancia automáticamente.
+            self.fields["start_date"].disabled = True
+        self.fields["planned_training_days"].help_text = (
+            "Meta mensual de días de entrenamiento (no semanal)."
+        )
+        self.fields["planned_nutrition_days"].help_text = (
+            "Meta mensual de días de seguimiento nutricional (no semanal)."
+        )
         # Reordenar para que "Correo" aparezca junto al resto de datos
         # de contacto en el template.
         self.order_fields(
@@ -42,6 +53,17 @@ class MemberPersonalDataForm(forms.ModelForm):
              "planned_training_days", "planned_nutrition_days",
              "next_payment_date"]
         )
+
+    def clean_email(self):
+        email = self.cleaned_data["email"]
+        existing = User.objects.filter(email=email)
+        if self.instance and self.instance.pk and self.instance.user_id:
+            existing = existing.exclude(pk=self.instance.user_id)
+        if existing.exists():
+            raise forms.ValidationError(
+                "Ya existe un usuario registrado con este correo."
+            )
+        return email
 
 
 class MemberFitnessUpdateForm(forms.ModelForm):

@@ -1,5 +1,24 @@
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from .models import Member
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    """Usado por ChangePasswordView (flujo obligatorio de primer login
+    con contraseña temporal, y 'Cambiar contraseña' desde Perfil)."""
+
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+
+    def validate_current_password(self, value):
+        user = self.context["request"].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("La contraseña actual no es correcta.")
+        return value
+
+    def validate_new_password(self, value):
+        validate_password(value, user=self.context["request"].user)
+        return value
 
 
 class MemberAdminSerializer(serializers.ModelSerializer):
