@@ -109,12 +109,19 @@ class StudyExportView(views.APIView):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="estudio_constancia.csv"'
         writer = csv.writer(response)
-        writer.writerow(["Nombre", "Sesiones planificadas", "Sesiones completadas", "VD1 %", "Días planificados de dieta", "Días con registro nutricional", "VD2 %"])
+        writer.writerow([
+            "Nombre", "Sesiones planificadas", "Sesiones completadas", "VD1 %",
+            "Días activos", "Días con registro nutricional", "VD2 %",
+            "VD1 - Frecuencia semanal", "VD1 - Duración promedio (min)", "VD1 - Variación %",
+            "VD2 - Frecuencia semanal", "VD2 - % semanas con mínimo", "VD2 - Variación %",
+        ])
 
         for m in compute_study_metrics(start, end):
             writer.writerow([
                 m["name"], m["planned"], m["completed"], m["vd1"],
-                m["planned_nutrition"], m["days_with_log"], m["vd2"],
+                m["active_days"], m["days_with_log"], m["vd2"],
+                m["vd1_weekly_freq"], m["vd1_avg_duration"], m["vd1_variation"] if m["vd1_variation"] is not None else "",
+                m["vd2_weekly_freq"], m["vd2_weeks_min_pct"], m["vd2_variation"] if m["vd2_variation"] is not None else "",
             ])
 
         return response
