@@ -173,3 +173,11 @@ class StudyMetricsPlannedDaysTests(TestCase):
         self.assertEqual(row["planned_nutrition"], 10)
         self.assertEqual(row["days_with_log"], 3)
         self.assertEqual(row["vd2"], 30.0)
+
+    def test_deactivated_member_is_excluded_from_metrics(self):
+        # Feedback prueba E2E v3: un miembro desactivado seguía
+        # contando para VD1/VD2 aunque ya no forme parte del gimnasio.
+        self.member.is_active = False
+        self.member.save(update_fields=["is_active"])
+        metrics = compute_study_metrics()
+        self.assertFalse(any(m["member"] == self.member for m in metrics))

@@ -22,6 +22,11 @@ urlpatterns = [
         name="member-reactivate",
     ),
     path(
+        "miembros/<int:pk>/resetear-password/",
+        views.MemberResetPasswordView.as_view(),
+        name="member-reset-password",
+    ),
+    path(
         "miembros/<int:pk>/nutricion/generar/",
         views.GenerateNutritionPlanView.as_view(), name="nutrition-plan-generate",
     ),

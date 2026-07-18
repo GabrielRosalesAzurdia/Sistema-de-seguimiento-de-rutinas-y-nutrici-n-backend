@@ -14,6 +14,14 @@
         <a href="{% url 'panel:nutrition-plan-detail' successor.pk %}" style="text-decoration: underline;">ir al plan sucesor</a>.
     </p>
     {% endif %}
+    {% if plan.status == "SUPERSEDED" %}
+    <p style="color: var(--yellow);">
+        Este plan fue reemplazado por uno más reciente.
+        {% if current_plan %}
+        <a href="{% url 'panel:nutrition-plan-detail' current_plan.pk %}" style="text-decoration: underline;">ir al plan vigente</a>.
+        {% endif %}
+    </p>
+    {% endif %}
 
     <form method="post">
         {% csrf_token %}

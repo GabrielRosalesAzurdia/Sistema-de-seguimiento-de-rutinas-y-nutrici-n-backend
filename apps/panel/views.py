@@ -190,6 +190,25 @@ class MemberToggleActiveView(CoachRequiredMixin, View):
         return redirect("panel:members-list")
 
 
+class MemberResetPasswordView(CoachRequiredMixin, View):
+    """Genera una nueva contraseña temporal para un miembro que olvidó
+    la suya — mismo patrón que la contraseña temporal generada al
+    crear el miembro (get_random_string + modal vía messages con
+    extra_tags="temp-password", ver base.html), y misma vista
+    independiente/POST-only que MemberToggleActiveView (no depende de
+    validar el formulario completo de datos personales)."""
+
+    def post(self, request, pk):
+        member = get_object_or_404(Member, pk=pk)
+        new_password = get_random_string(12)
+        member.user.set_password(new_password)
+        member.user.must_change_password = True
+        member.user.save(update_fields=["password", "must_change_password"])
+        messages.success(request, new_password, extra_tags="temp-password")
+        messages.success(request, f"Nueva contraseña generada para {member.full_name}.")
+        return redirect("panel:member-update", pk=pk)
+
+
 class MemberFitnessUpdateView(CoachRequiredMixin, UpdateView):
     """"Actualización de datos fitness": peso + medidas corporales.
     A diferencia de editar datos personales, cada guardado crea un
@@ -335,7 +354,7 @@ class NutritionReviewView(CoachRequiredMixin, TemplateView):
             status="PENDING_REVIEW"
         ).select_related("member").order_by("-created_at")
         context["approved"] = NutritionPlan.objects.filter(
-            status="APPROVED"
+            status="APPROVED", is_current=True
         ).select_related("member").order_by("-created_at")
         return context
 
@@ -383,16 +402,30 @@ class NutritionPlanDetailView(CoachRequiredMixin, View):
         plan = get_object_or_404(NutritionPlan.objects.select_related("member"), pk=pk)
         formset = MealSuggestionFormSet(instance=plan)
         successor = None
+        current_plan = None
         if plan.status == "REJECTED":
             successor = NutritionPlan.objects.filter(
                 member=plan.member, status="PENDING_REVIEW"
             ).order_by("-created_at").first()
+        elif plan.status == "SUPERSEDED":
+            current_plan = NutritionPlan.objects.filter(
+                member=plan.member, status="APPROVED", is_current=True
+            ).order_by("-created_at").first()
         return render(request, self.template_name, {
             "plan": plan, "formset": formset, "successor": successor,
+            "current_plan": current_plan,
         })
 
     def post(self, request, pk):
         plan = get_object_or_404(NutritionPlan.objects.select_related("member"), pk=pk)
+        if plan.status in ("SUPERSEDED", "REJECTED"):
+            # Plan cerrado/reemplazado: de solo lectura — antes se podía
+            # "Rechazar" un plan APPROVED ya superado por uno más nuevo,
+            # lo que disparaba otra generación automática y acumulaba
+            # varios planes "activos" para el mismo miembro (bug de la
+            # prueba E2E).
+            messages.error(request, "Este plan ya no está activo y es de solo lectura.")
+            return redirect("panel:nutrition-plan-detail", pk=plan.pk)
         action = request.POST.get("action")
         if action not in ("approve", "reject", "save"):
             messages.error(request, "Acción no reconocida.")
@@ -415,7 +448,9 @@ class NutritionPlanDetailView(CoachRequiredMixin, View):
             plan.reviewed_at = timezone.now()
             plan.is_current = True
             plan.save()
-            NutritionPlan.objects.filter(member=plan.member).exclude(pk=plan.pk).update(is_current=False)
+            NutritionPlan.objects.filter(
+                member=plan.member, status="APPROVED"
+            ).exclude(pk=plan.pk).update(is_current=False, status="SUPERSEDED")
             messages.success(request, f"Plan de {plan.member.full_name} aprobado.")
             return redirect("panel:nutrition-review")
         elif action == "reject":

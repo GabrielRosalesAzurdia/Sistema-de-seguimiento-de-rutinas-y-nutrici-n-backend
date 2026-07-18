@@ -69,6 +69,10 @@
             {% csrf_token %}
             <button type="submit" class="btn" style="background: var(--green);">Generar nueva dieta</button>
         </form>
+        <form method="post" action="{% url 'panel:member-reset-password' object.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn" style="background: var(--yellow); color:#000;">Generar nueva contraseña</button>
+        </form>
         {% if object.is_active %}
         <form method="post" action="{% url 'panel:member-deactivate' object.pk %}">
             {% csrf_token %}

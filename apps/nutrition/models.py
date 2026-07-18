@@ -24,6 +24,7 @@ class NutritionPlanStatus(models.TextChoices):
     PENDING_REVIEW = "PENDING_REVIEW", "Pendiente de revisión"
     APPROVED = "APPROVED", "Aprobada y en seguimiento"
     REJECTED = "REJECTED", "Rechazada"
+    SUPERSEDED = "SUPERSEDED", "Reemplazada"
 
 
 class NutritionPlan(models.Model):

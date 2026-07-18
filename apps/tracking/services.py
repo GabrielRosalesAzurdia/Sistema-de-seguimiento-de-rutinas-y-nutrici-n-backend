@@ -25,9 +25,15 @@ def compute_study_metrics(start=None, end=None):
     Devuelve una lista de dicts, uno por miembro con
     `participates_in_study=True`, con VD1 y VD2 para el rango de
     fechas dado (o todo el histórico si start/end son None).
+
+    Los miembros desactivados (`is_active=False`) se excluyen por
+    completo, incluyendo los datos que hayan generado mientras
+    estuvieron activos — no hay campo de fecha de baja para recortar
+    solo el período activo, así que se excluyen del todo (feedback de
+    la prueba E2E).
     """
     results = []
-    for member in Member.objects.filter(participates_in_study=True):
+    for member in Member.objects.filter(participates_in_study=True, is_active=True):
         workouts = member.workout_logs.all()
         nutrition_logs = member.nutrition_logs.all()
         if start:
