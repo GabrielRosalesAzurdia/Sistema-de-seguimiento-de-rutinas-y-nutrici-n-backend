@@ -6,7 +6,6 @@ __pycache__/
 staticfiles/
 media/
 db.sqlite3
-apps/ml_predictions/trained_models/*.joblib
 venv/
 .venv/
 
