@@ -75,6 +75,9 @@ DATABASES = {
         "PASSWORD": config("DB_PASSWORD", default="club_fitness"),
         "HOST": config("DB_HOST", default="localhost"),
         "PORT": config("DB_PORT", default="5432"),
+        # Neon exige SSL; Render (interno) y local no lo necesitan, por
+        # eso el default "prefer" (intenta SSL, no falla si no hay).
+        "OPTIONS": {"sslmode": config("DB_SSLMODE", default="prefer")},
     }
 }
 

@@ -15,3 +15,7 @@ venv/
 *.log
 .idea/
 .vscode/
+
+# Dumps de migración Neon -> Render: contienen datos reales de
+# miembros (peso, medidas, teléfono), nunca deben ir a git.
+scripts/db-migration/backups/*.dump
