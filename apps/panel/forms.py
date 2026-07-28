@@ -4,13 +4,12 @@ from apps.members.models import Member, User
 
 class MemberPersonalDataForm(forms.ModelForm):
     """
-    Datos personales + membresía + metas del miembro (mockups admin
-    panel 03/04). El correo vive en `user.email` (no en `Member`);
-    este form expone un campo "Correo" que la vista sincroniza con el
-    `User` asociado. Las medidas físicas (peso, medidas corporales) NO
-    van aquí — se editan por separado en `MemberFitnessUpdateForm`,
-    cada actualización de esas queda registrada como un nuevo
-    `BodyMeasurementLog` (decisión del feedback de la prueba E2E).
+    Datos personales, membresía y metas del miembro. El correo vive en
+    `user.email` (no en `Member`); este form expone un campo "Correo"
+    que la vista sincroniza con el `User` asociado. Las medidas
+    físicas (peso, medidas corporales) NO van aquí — se editan por
+    separado en `MemberFitnessUpdateForm`, cada actualización de esas
+    queda registrada como un nuevo `BodyMeasurementLog`.
     """
 
     email = forms.EmailField(label="Correo")
@@ -34,9 +33,8 @@ class MemberPersonalDataForm(forms.ModelForm):
         if self.instance and self.instance.pk and self.instance.user_id:
             self.fields["email"].initial = self.instance.user.email
             # La fecha de inicio (fecha en que el miembro se unió al gym)
-            # no debe volver a pedirse ni poder cambiarse después de
-            # creado el miembro (feedback de la prueba E2E) — Django
-            # repuebla el valor desde la instancia automáticamente.
+            # es inmutable una vez creado el miembro — Django repuebla
+            # el valor desde la instancia automáticamente.
             self.fields["start_date"].disabled = True
         self.fields["planned_training_days"].help_text = (
             "Meta mensual de días de entrenamiento (no semanal)."

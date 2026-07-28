@@ -49,10 +49,9 @@ class PanelLogoutView(LogoutView):
 
 
 class DashboardView(CoachRequiredMixin, TemplateView):
-    """Dashboard (docs/mockups/admin_panel/01): stats + actividad
-    reciente. % Constancia Nutricional reusa el mismo cálculo VD2 de
-    compute_study_metrics (Track E.5) — limitado a miembros con
-    `participates_in_study=True`, igual que en Datos del estudio."""
+    """Conteo de miembros activos y pagos pendientes, promedio de
+    constancia nutricional (VD2, vía compute_study_metrics) y
+    actividad reciente de los últimos 15 miembros actualizados."""
 
     template_name = "panel/dashboard.html"
 
@@ -80,7 +79,7 @@ class DashboardView(CoachRequiredMixin, TemplateView):
 
 
 class MembersListView(CoachRequiredMixin, ListView):
-    """Pantalla 'Miembros' (docs/mockups/admin_panel/02_miembros_listado.jpeg)."""
+    """Listado de miembros con búsqueda por nombre o correo."""
 
     model = Member
     template_name = "panel/members_list.html"
@@ -105,12 +104,11 @@ class MembersListView(CoachRequiredMixin, ListView):
 
 
 class MemberFormActionMixin:
-    """Botones compartidos por 'Agregar'/'Editar Miembro'
-    (docs/mockups/admin_panel/03 y 04): Guardar / Pagado — todos
-    reenvían el mismo form, distinguidos por el nombre del botón
-    presionado. "Desactivar"/"Reactivar" viven en MemberToggleActiveView
-    (fuera de este form: no deben depender de pasar la validación
-    completa de datos personales, ver feedback de la prueba E2E)."""
+    """Botones compartidos por 'Agregar'/'Editar Miembro': Guardar /
+    Pagado — todos reenvían el mismo form, distinguidos por el nombre
+    del botón presionado. "Desactivar"/"Reactivar" viven en
+    MemberToggleActiveView, fuera de este form: no dependen de pasar
+    la validación completa de datos personales."""
 
     form_class = MemberPersonalDataForm
     template_name = "panel/member_form.html"
@@ -160,24 +158,20 @@ class MemberFormActionMixin:
 
 
 class MemberCreateView(MemberFormActionMixin, CoachRequiredMixin, CreateView):
-    """Pantalla 'Agregar Miembro' (docs/mockups/admin_panel/04)."""
+    """Vista de creación de miembro."""
 
 
 class MemberUpdateView(MemberFormActionMixin, CoachRequiredMixin, UpdateView):
-    """Pantalla 'Editar Miembro' (docs/mockups/admin_panel/03)."""
+    """Vista de edición de miembro."""
 
     model = Member
 
 
 class MemberToggleActiveView(CoachRequiredMixin, View):
-    """Desactivar/reactivar un miembro — vista dedicada, POST-only, que
-    NO depende de MemberPersonalDataForm en absoluto (antes reutilizaba
-    el form completo de Editar Miembro, forzando a pasar su validación
-    solo para desactivar a alguien, ver feedback de la prueba E2E).
-    Desactiva tanto Member.is_active (visibilidad/estado en el panel)
-    como User.is_active (bloquea el login en la app — antes solo se
-    tocaba Member.is_active y el miembro "desactivado" seguía pudiendo
-    loguearse)."""
+    """Desactiva o reactiva un miembro — vista dedicada, POST-only, que
+    no depende de MemberPersonalDataForm en absoluto. Desactiva tanto
+    Member.is_active (visibilidad/estado en el panel) como
+    User.is_active (bloquea el login en la app)."""
 
     def post(self, request, pk, activate):
         member = get_object_or_404(Member, pk=pk)
@@ -253,11 +247,10 @@ class MemberFitnessUpdateView(CoachRequiredMixin, UpdateView):
 
 class RoutinesListView(CoachRequiredMixin, TemplateView):
     """
-    Pantalla 'Rutinas' (docs/mockups/admin_panel/05): sidebar con las 7
-    categorías, ejercicios vigentes de la categoría seleccionada a la
-    derecha. Incluye además la grilla del calendario semanal por
-    género (Track B) — no está en el mockup original, se agregó por
-    la decisión de negocio del calendario confirmada después.
+    Pantalla 'Rutinas': sidebar con las 7 categorías, ejercicios
+    vigentes de la categoría seleccionada a la derecha, y la grilla
+    del calendario semanal por género (qué categoría de rutina
+    corresponde a cada día y género).
     """
 
     template_name = "panel/routines_list.html"
@@ -283,9 +276,9 @@ class RoutinesListView(CoachRequiredMixin, TemplateView):
 
 
 class RoutineEditExercisesView(CoachRequiredMixin, View):
-    """Pantalla 'Editar ejercicios' (docs/mockups/admin_panel/06):
-    selección múltiple del catálogo de la categoría (toggle), sin
-    reordenar a mano — el orden se asigna según el orden de selección."""
+    """Selección múltiple del catálogo de ejercicios de una categoría
+    (toggle); el orden de los ejercicios se asigna según el orden de
+    selección, sin reordenamiento manual."""
 
     def get(self, request, category):
         routine = get_object_or_404(Routine, category=category)
@@ -323,8 +316,7 @@ class ScheduleUpdateView(CoachRequiredMixin, View):
 
 
 class NutritionReviewView(CoachRequiredMixin, TemplateView):
-    """Pantalla 'Nutrición' (docs/mockups/admin_panel/07): dietas
-    pendientes de revisión vs. aprobadas y en seguimiento."""
+    """Dietas pendientes de revisión vs. aprobadas y en seguimiento."""
 
     template_name = "panel/nutrition_review.html"
 
@@ -392,9 +384,7 @@ class GenerateNutritionPlanView(CoachRequiredMixin, View):
 class NutritionPlanDetailView(CoachRequiredMixin, View):
     """Detalle de un plan nutricional (pendiente o aprobado): muestra
     y permite editar las 5 comidas (macros + sugerencias de platillos)
-    antes de aprobar/rechazar — antes solo se veían los totales del
-    plan, sin forma de revisar/completar las sugerencias (feedback de
-    la prueba E2E)."""
+    antes de aprobar/rechazar."""
 
     template_name = "panel/nutrition_plan_detail.html"
 
@@ -419,11 +409,8 @@ class NutritionPlanDetailView(CoachRequiredMixin, View):
     def post(self, request, pk):
         plan = get_object_or_404(NutritionPlan.objects.select_related("member"), pk=pk)
         if plan.status in ("SUPERSEDED", "REJECTED"):
-            # Plan cerrado/reemplazado: de solo lectura — antes se podía
-            # "Rechazar" un plan APPROVED ya superado por uno más nuevo,
-            # lo que disparaba otra generación automática y acumulaba
-            # varios planes "activos" para el mismo miembro (bug de la
-            # prueba E2E).
+            # Plan cerrado/reemplazado (SUPERSEDED o REJECTED): de solo
+            # lectura, no admite nuevas acciones.
             messages.error(request, "Este plan ya no está activo y es de solo lectura.")
             return redirect("panel:nutrition-plan-detail", pk=plan.pk)
         action = request.POST.get("action")
@@ -476,11 +463,10 @@ class NutritionPlanDetailView(CoachRequiredMixin, View):
 
 class StudyDataView(CoachRequiredMixin, TemplateView):
     """
-    Pantalla 'Datos del estudio' (docs/mockups/admin_panel/08): rango
-    de fechas, promedios VD1/VD2 y tablas de detalle por miembro. El
-    botón "Exportar a CSV" enlaza directo al endpoint DRF ya existente
-    (GET /api/tracking/study-export/), que ahora también acepta sesión
-    de Django además de JWT.
+    Rango de fechas, promedios VD1/VD2 y tablas de detalle por
+    miembro. El botón "Exportar a CSV" enlaza al endpoint
+    GET /api/tracking/study-export/, que acepta tanto sesión de
+    Django como JWT.
     """
 
     template_name = "panel/study_export.html"

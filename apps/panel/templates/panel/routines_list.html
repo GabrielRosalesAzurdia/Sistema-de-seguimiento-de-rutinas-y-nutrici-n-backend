@@ -36,9 +36,7 @@
 <div class="card" style="margin-top:24px;">
     <h3 style="margin-top:0;">Calendario semanal (por género)</h3>
     <p style="color: var(--text-secondary); font-size:0.9em;">
-        No estaba en el mockup original — se agregó por la decisión de
-        negocio de que la "rutina de hoy" depende del día y el género
-        del miembro. Dejar un día en "—" significa descanso ese día.
+        Dejar un día en "—" significa descanso ese día.
     </p>
     <form method="post" action="{% url 'panel:schedule-update' %}">
         {% csrf_token %}
