@@ -1,0 +1,97 @@
+{
+  "routines": [
+    {
+      "category": "PECHO",
+      "estimated_duration_min_low": 45,
+      "estimated_duration_min_high": 60,
+      "estimated_calories": 350
+    },
+    {
+      "category": "HOMBRO",
+      "estimated_duration_min_low": 40,
+      "estimated_duration_min_high": 55,
+      "estimated_calories": 300
+    },
+    {
+      "category": "BRAZOS_ESPALDA",
+      "estimated_duration_min_low": 60,
+      "estimated_duration_min_high": 75,
+      "estimated_calories": 420
+    },
+    {
+      "category": "PIERNA_CUADRICEPS",
+      "estimated_duration_min_low": 60,
+      "estimated_duration_min_high": 75,
+      "estimated_calories": 480
+    },
+    {
+      "category": "PIERNA_GLUTEOS",
+      "estimated_duration_min_low": 55,
+      "estimated_duration_min_high": 70,
+      "estimated_calories": 430
+    }
+  ],
+  "exercises": [
+    {"name": "Despechadas", "category": "PECHO"},
+    {"name": "Pecho Inclinado", "category": "PECHO"},
+    {"name": "Pecho Plano", "category": "PECHO"},
+    {"name": "Pecho Declinado", "category": "PECHO"},
+    {"name": "Flys/Aperturas", "category": "PECHO"},
+    {"name": "Pull Over", "category": "PECHO"},
+    {"name": "Cross Over", "category": "PECHO"},
+
+    {"name": "Press Militar", "category": "HOMBRO"},
+    {"name": "Hombro Lateral", "category": "HOMBRO"},
+    {"name": "Hombro Frontal", "category": "HOMBRO"},
+    {"name": "Hombro Posterior", "category": "HOMBRO"},
+    {"name": "Jalones al Mentón", "category": "HOMBRO"},
+
+    {"name": "Dominadas", "category": "BRAZOS_ESPALDA"},
+    {"name": "Australianas", "category": "BRAZOS_ESPALDA"},
+    {"name": "Rip 60", "category": "BRAZOS_ESPALDA"},
+    {"name": "Polea abierta", "category": "BRAZOS_ESPALDA"},
+    {"name": "Polea Cerrada", "category": "BRAZOS_ESPALDA"},
+    {"name": "Face Pull", "category": "BRAZOS_ESPALDA"},
+    {"name": "Remo Barra", "category": "BRAZOS_ESPALDA"},
+    {"name": "Remo Polea", "category": "BRAZOS_ESPALDA"},
+    {"name": "Pull Over Barra", "category": "BRAZOS_ESPALDA"},
+    {"name": "Serrucho", "category": "BRAZOS_ESPALDA"},
+    {"name": "Remo T", "category": "BRAZOS_ESPALDA"},
+    {"name": "Bícep Curl", "category": "BRAZOS_ESPALDA"},
+    {"name": "Bícep Martillo", "category": "BRAZOS_ESPALDA"},
+    {"name": "Curl 21", "category": "BRAZOS_ESPALDA"},
+    {"name": "Predicador", "category": "BRAZOS_ESPALDA"},
+    {"name": "Concentrado", "category": "BRAZOS_ESPALDA"},
+    {"name": "Reverse Curl", "category": "BRAZOS_ESPALDA"},
+    {"name": "Antebrazo", "category": "BRAZOS_ESPALDA"},
+    {"name": "Tríceps Lazo", "category": "BRAZOS_ESPALDA"},
+    {"name": "Tríceps Barra", "category": "BRAZOS_ESPALDA"},
+    {"name": "Press Francés", "category": "BRAZOS_ESPALDA"},
+    {"name": "Press Tríceps", "category": "BRAZOS_ESPALDA"},
+    {"name": "Copa", "category": "BRAZOS_ESPALDA"},
+    {"name": "Fondos", "category": "BRAZOS_ESPALDA"},
+    {"name": "Despechada para Tríceps", "category": "BRAZOS_ESPALDA"},
+
+    {"name": "Extensión de Cuádriceps", "category": "PIERNA_CUADRICEPS"},
+    {"name": "Sentadilla Cerrada", "category": "PIERNA_CUADRICEPS"},
+    {"name": "Sentadilla Libre", "category": "PIERNA_CUADRICEPS"},
+    {"name": "Desplantes", "category": "PIERNA_CUADRICEPS"},
+    {"name": "Prensa", "category": "PIERNA_CUADRICEPS"},
+    {"name": "Aductor", "category": "PIERNA_CUADRICEPS"},
+    {"name": "Sentadilla Búlgara (Cuádriceps)", "category": "PIERNA_CUADRICEPS"},
+
+    {"name": "Peso Muerto Femoral", "category": "PIERNA_GLUTEOS"},
+    {"name": "Femoral en Máquina", "category": "PIERNA_GLUTEOS"},
+    {"name": "Sentadilla Sumo (Glúteo)", "category": "PIERNA_GLUTEOS"},
+    {"name": "Elevación de Cadera", "category": "PIERNA_GLUTEOS"},
+    {"name": "Patada de Burro", "category": "PIERNA_GLUTEOS"},
+    {"name": "Abducción de Cadera", "category": "PIERNA_GLUTEOS"},
+    {"name": "Sentadilla Búlgara (Glúteo)", "category": "PIERNA_GLUTEOS"},
+    {"name": "Steps", "category": "PIERNA_GLUTEOS"},
+    {"name": "Elevación de Cadera Unilateral", "category": "PIERNA_GLUTEOS"},
+    {"name": "Peso Muerto Unilateral", "category": "PIERNA_GLUTEOS"},
+    {"name": "Hiperextensiones", "category": "PIERNA_GLUTEOS"},
+    {"name": "Patas Laterales Polea", "category": "PIERNA_GLUTEOS"},
+    {"name": "Reverse Hiperextensiones", "category": "PIERNA_GLUTEOS"}
+  ]
+}
