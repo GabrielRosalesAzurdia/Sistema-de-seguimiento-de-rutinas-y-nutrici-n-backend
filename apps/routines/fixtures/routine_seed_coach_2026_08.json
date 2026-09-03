@@ -2,9 +2,9 @@
   "routines": [
     {
       "category": "PECHO",
-      "estimated_duration_min_low": 45,
-      "estimated_duration_min_high": 60,
-      "estimated_calories": 350
+      "estimated_duration_min_low": 62,
+      "estimated_duration_min_high": 78,
+      "estimated_calories": 600
     },
     {
       "category": "HOMBRO",
@@ -14,21 +14,21 @@
     },
     {
       "category": "BRAZOS_ESPALDA",
-      "estimated_duration_min_low": 60,
-      "estimated_duration_min_high": 75,
-      "estimated_calories": 420
+      "estimated_duration_min_low": 67,
+      "estimated_duration_min_high": 83,
+      "estimated_calories": 550
     },
     {
       "category": "PIERNA_CUADRICEPS",
-      "estimated_duration_min_low": 60,
-      "estimated_duration_min_high": 75,
-      "estimated_calories": 480
+      "estimated_duration_min_low": 77,
+      "estimated_duration_min_high": 93,
+      "estimated_calories": 700
     },
     {
       "category": "PIERNA_GLUTEOS",
-      "estimated_duration_min_low": 55,
-      "estimated_duration_min_high": 70,
-      "estimated_calories": 430
+      "estimated_duration_min_low": 72,
+      "estimated_duration_min_high": 88,
+      "estimated_calories": 650
     }
   ],
   "exercises": [
