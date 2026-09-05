@@ -176,11 +176,15 @@ class Member(models.Model):
     # miembro rebasa su meta, el % puede superar 100% — no se limita).
     planned_training_days = models.PositiveSmallIntegerField(
         "Días planificados de rutina",
-        help_text="Meta individual de días de entrenamiento definida por el coach.",
+        help_text="Total de sesiones de entrenamiento que el coach planifica "
+        "para el miembro durante el período de medición (actualmente un mes), "
+        "no un valor semanal.",
     )
     planned_nutrition_days = models.PositiveSmallIntegerField(
         "Días planificados de dieta",
-        help_text="Meta individual de días de seguimiento nutricional definida por el coach.",
+        help_text="Total de días de seguimiento nutricional que el coach "
+        "planifica para el miembro durante el período de medición (actualmente "
+        "un mes), no un valor semanal.",
     )
 
     # --- Consentimiento informado (viabilidad operacional del estudio) ---

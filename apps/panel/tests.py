@@ -50,6 +50,41 @@ class MemberCreateViewTests(TestCase):
         self.assertEqual(member.next_payment_date, add_one_month(member.start_date))
 
 
+class MemberFormMetaLabelsAndHelpTests(TestCase):
+    """Feedback: el coach llenó `planned_training_days` sin ver que la
+    meta es del período (mensual), no semanal — el template no
+    renderizaba el help_text. Ahora la etiqueta lo aclara y el
+    help_text (canónico, en el modelo) se muestra bajo el input."""
+
+    def setUp(self):
+        self.coach = User.objects.create_user(
+            username="coach@test.com", email="coach@test.com", password="pass1234", is_staff=True
+        )
+        self.client = Client()
+        self.client.force_login(self.coach)
+
+    def test_labels_say_period_total_not_weekly(self):
+        html = self.client.get(reverse("panel:member-create")).content.decode()
+        self.assertIn("Sesiones planificadas del período (total, no semanal)", html)
+        self.assertIn("Días planificados de seguimiento nutricional (total, no semanal)", html)
+
+    def test_help_text_is_rendered_in_the_form(self):
+        html = self.client.get(reverse("panel:member-create")).content.decode()
+        self.assertIn("field-help", html)
+        self.assertIn("durante el período de medición (actualmente un mes), no un valor semanal", html)
+
+    def test_model_and_form_help_text_match(self):
+        from apps.members.models import Member
+        from apps.panel.forms import MemberPersonalDataForm
+
+        form = MemberPersonalDataForm()
+        for name in ("planned_training_days", "planned_nutrition_days"):
+            self.assertEqual(
+                form.fields[name].help_text,
+                Member._meta.get_field(name).help_text,
+            )
+
+
 class StudyDataRangeValidationTests(TestCase):
     """La pantalla 'Datos del estudio' avisa cuando el rango es inválido
     (inicio posterior al fin) en vez de mostrar una tabla vacía."""

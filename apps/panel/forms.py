@@ -36,11 +36,15 @@ class MemberPersonalDataForm(forms.ModelForm):
             # es inmutable una vez creado el miembro — Django repuebla
             # el valor desde la instancia automáticamente.
             self.fields["start_date"].disabled = True
-        self.fields["planned_training_days"].help_text = (
-            "Meta mensual de días de entrenamiento (no semanal)."
+        # Etiquetas más explícitas para el panel: el valor es el total del
+        # período de medición (hoy un mes), no un ritmo semanal. El
+        # help_text lo hereda del modelo (Member), donde vive el texto
+        # canónico — así el panel y el admin de Django dicen lo mismo.
+        self.fields["planned_training_days"].label = (
+            "Sesiones planificadas del período (total, no semanal)"
         )
-        self.fields["planned_nutrition_days"].help_text = (
-            "Meta mensual de días de seguimiento nutricional (no semanal)."
+        self.fields["planned_nutrition_days"].label = (
+            "Días planificados de seguimiento nutricional (total, no semanal)"
         )
         # Reordenar para que "Correo" aparezca junto al resto de datos
         # de contacto en el template.

@@ -20,6 +20,7 @@
                 <div>
                     <label>{{ field.label }}</label>
                     {{ field }}
+                    {% if field.help_text %}<small class="field-help">{{ field.help_text }}</small>{% endif %}
                     {% if field.errors %}<small style="color: var(--danger);">{{ field.errors|join:", " }}</small>{% endif %}
                 </div>
                 {% endif %}
@@ -33,6 +34,7 @@
                 <div>
                     <label>{{ field.label }}</label>
                     {{ field }}
+                    {% if field.help_text %}<small class="field-help">{{ field.help_text }}</small>{% endif %}
                     {% if field.errors %}<small style="color: var(--danger);">{{ field.errors|join:", " }}</small>{% endif %}
                 </div>
                 {% endif %}
@@ -94,6 +96,7 @@
         background: #141414; color: #fff;
     }
     .form-grid label { display:block; margin-bottom: 4px; color: var(--text-secondary); font-size: 0.9em; }
+    .field-help { display:block; margin-top: 4px; color: var(--text-secondary); font-size: 0.78em; line-height: 1.35; opacity: 0.85; }
     h3 { color: var(--text-secondary); font-size: 1em; text-transform: uppercase; letter-spacing: 0.5px; }
 </style>
 {% endblock %}
