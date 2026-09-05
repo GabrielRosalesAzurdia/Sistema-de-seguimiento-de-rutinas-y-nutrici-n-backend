@@ -1,12 +1,10 @@
-from datetime import timedelta
 from django.utils import timezone
 from rest_framework import views, viewsets, permissions
 from rest_framework.response import Response
 
-from apps.tracking.models import WorkoutSessionLog, DailyNutritionLog
 from .models import MLPrediction
 from .serializers import MLPredictionSerializer
-from .services import predict_days_to_goal
+from .services import compute_recent_adherence, predict_days_to_goal
 
 
 class MyProgressPredictionView(views.APIView):
@@ -19,20 +17,11 @@ class MyProgressPredictionView(views.APIView):
 
     def get(self, request):
         member = request.user.member_profile
-        window_start = timezone.now() - timedelta(days=30)
 
-        recent_workouts = WorkoutSessionLog.objects.filter(
-            member=member, completed_at__gte=window_start
-        ).count()
-        # Referencia simple: se asume ~12 sesiones planificadas en 30 días
-        # (aprox. 3 por semana) hasta contar con la definición operacional
-        # final de "planificadas" acordada con el asesor.
-        training_adherence = min(recent_workouts / 12, 1.0)
-
-        recent_nutrition_days = DailyNutritionLog.objects.filter(
-            member=member, date__gte=window_start.date()
-        ).count()
-        nutrition_adherence = min(recent_nutrition_days / 30, 1.0)
+        # Constancia reciente calculada con los denominadores reales del
+        # estudio (planned_training_days y días activos), no constantes
+        # fijas — ver apps/ml_predictions/services.py::compute_recent_adherence.
+        training_adherence, nutrition_adherence = compute_recent_adherence(member)
 
         # Una predicción por miembro por día: si ya se calculó una hoy
         # (p. ej. el dashboard hace varias cargas/refrescos), se

@@ -14,11 +14,22 @@ período de implementación (oct-nov 2026). Mientras no hay datos reales
 de uso, se deja un cálculo determinístico razonable como placeholder
 para no bloquear el desarrollo del resto del sistema.
 """
+from datetime import timedelta
 from pathlib import Path
+
 import joblib
 import pandas as pd
+from django.utils import timezone
+
+from apps.tracking.services import member_active_window
 
 MODEL_DIR = Path(__file__).resolve().parent / "trained_models"
+
+# Ventana reciente (en días) sobre la que se mide la constancia que
+# alimenta la predicción. El nombre de los parámetros de
+# predict_days_to_goal ya es "recent_*": interesa la constancia
+# reciente, no la histórica completa desde el alta.
+RECENT_ADHERENCE_WINDOW_DAYS = 30
 
 # Con menos de 3 sesiones registradas, el denominador de constancia que
 # alimenta tanto la heurística como el Random Forest (entrenado sobre la
@@ -44,6 +55,47 @@ def _load_model(filename: str):
     if not path.exists():
         return None
     return joblib.load(path)
+
+
+def compute_recent_adherence(member, days: int = RECENT_ADHERENCE_WINDOW_DAYS):
+    """
+    Devuelve (training_adherence, nutrition_adherence) en [0, 1] para el
+    miembro, sobre la ventana reciente de `days` días.
+
+    Usa los mismos denominadores que la definición operacional del
+    estudio (ver apps/tracking/services.py), no constantes fijas:
+    - entrenamiento: `Member.planned_training_days`, la meta mensual que
+      el coach fija por miembro (0.0 si esa meta es 0).
+    - nutrición: los "días activos en el sistema" del miembro dentro de
+      la ventana, vía `member_active_window` (misma lógica que VD2).
+
+    Ambos ratios se recortan a 1.0 antes de devolverlos: la meta de
+    entrenamiento se puede superar (VD1 no tiene tope), pero el modelo
+    se entrenó con constancias en [0, 1] y un valor fuera de ese rango
+    degrada la predicción.
+    """
+    today = timezone.localdate()
+    window_start = today - timedelta(days=days)
+    comp_start, cutoff = member_active_window(member, window_start, today)
+
+    recent_workouts = member.workout_logs.filter(
+        completed_at__date__gte=window_start, completed_at__date__lte=today
+    ).count()
+    training_adherence = (
+        min(recent_workouts / member.planned_training_days, 1.0)
+        if member.planned_training_days
+        else 0.0
+    )
+
+    active_days = max((cutoff - comp_start).days + 1, 0)
+    recent_nutrition_days = member.nutrition_logs.filter(
+        date__gte=comp_start, date__lte=cutoff
+    ).count()
+    nutrition_adherence = (
+        min(recent_nutrition_days / active_days, 1.0) if active_days else 0.0
+    )
+
+    return training_adherence, nutrition_adherence
 
 
 def predict_days_to_goal(member, recent_training_adherence: float, recent_nutrition_adherence: float):

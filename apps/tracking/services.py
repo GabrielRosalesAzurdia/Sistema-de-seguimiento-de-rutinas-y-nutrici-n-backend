@@ -14,13 +14,13 @@ Definición operacional cerrada (ver CLAUDE.md sección 1 y 8):
   más de lo planificado, el % puede superar 100% (decisión de negocio:
   se considera una meta superada, no un error de datos).
 - VD2: el denominador es "días activos en el sistema" del miembro
-  dentro del rango solicitado (ver `_active_window`) — corrección de
+  dentro del rango solicitado (ver `member_active_window`) — corrección de
   la ronda de feedback v4, ya no usa la meta individual
   `planned_nutrition_days` (ese campo sigue existiendo en el modelo,
   pero ahora solo alimenta otras pantallas del panel, no VD2).
 """
 import math
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from django.db.models import Avg, Sum
 from django.utils import timezone
@@ -35,10 +35,16 @@ def _parse(value):
     return value if isinstance(value, date) else parse_date(value)
 
 
-def _active_window(member, range_start, range_end):
+def member_active_window(member, range_start, range_end):
     """
     Devuelve (comp_start, cutoff) para un miembro dado un rango
     start/end ya parseado a date (o None).
+
+    Función pública compartida: además de VD2 y los indicadores
+    secundarios de este módulo, la usa
+    apps.ml_predictions.services.compute_recent_adherence para que la
+    constancia que alimenta la predicción se calcule con la misma
+    definición de "días activos en el sistema".
 
     activation_date = max(start_date, created_at): un miembro no pudo
     tener registros antes de que su cuenta existiera en el sistema,
@@ -50,7 +56,16 @@ def _active_window(member, range_start, range_end):
     describan la misma ventana real de actividad del miembro. cutoff
     acota el fin del rango a hoy (si no hay fin, o el fin es futuro).
     """
-    activation_date = max(member.start_date, member.created_at.date())
+    # `Member.start_date` es un DateField, pero su default (`timezone.now`)
+    # devuelve un datetime; en una instancia recién creada en memoria
+    # (sin ida y vuelta a la BD) el atributo puede ser datetime en vez de
+    # date. Se normaliza a date antes de comparar — no cambia el valor
+    # para ninguna fila ya persistida (ahí ya es date), solo evita el
+    # TypeError al mezclar date y datetime.
+    start_date = member.start_date
+    if isinstance(start_date, datetime):
+        start_date = start_date.date()
+    activation_date = max(start_date, member.created_at.date())
     today = timezone.localdate()
 
     comp_start = max(activation_date, range_start) if range_start else activation_date
@@ -176,7 +191,7 @@ def compute_study_metrics(start=None, end=None):
         vd1 = round((completed / planned) * 100, 1) if planned else 0
 
         days_with_log = nutrition_logs.count()
-        comp_start, cutoff = _active_window(member, range_start, range_end)
+        comp_start, cutoff = member_active_window(member, range_start, range_end)
         active_days = max((cutoff - comp_start).days + 1, 0)
         vd2 = round((days_with_log / active_days) * 100, 1) if active_days else 0
 
