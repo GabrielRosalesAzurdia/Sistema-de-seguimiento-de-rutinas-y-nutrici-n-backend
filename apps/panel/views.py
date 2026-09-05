@@ -18,7 +18,11 @@ from apps.routines.models import (
 from apps.nutrition.models import NutritionPlan, MealSuggestion
 from apps.nutrition.services import IncompleteProfileError, generate_plan_for_member
 from apps.tracking.models import BodyMeasurementLog
-from apps.tracking.services import compute_study_metrics
+from apps.tracking.services import (
+    InvalidStudyRange,
+    compute_study_metrics,
+    parse_study_range,
+)
 from .forms import MemberPersonalDataForm, MemberFitnessUpdateForm
 from .mixins import CoachRequiredMixin
 from .utils import add_one_month
@@ -475,9 +479,21 @@ class StudyDataView(CoachRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         start = self.request.GET.get("start", "")
         end = self.request.GET.get("end", "")
-        metrics = compute_study_metrics(start or None, end or None)
         context["start"] = start
         context["end"] = end
+
+        try:
+            parse_study_range(start or None, end or None)
+        except InvalidStudyRange as exc:
+            # Rango inválido: se avisa en la pantalla en vez de mostrar
+            # una tabla vacía que parece "sin actividad".
+            context["range_error"] = str(exc)
+            context["metrics"] = []
+            context["avg_vd1"] = 0
+            context["avg_vd2"] = 0
+            return context
+
+        metrics = compute_study_metrics(start or None, end or None)
         context["metrics"] = metrics
         context["avg_vd1"] = round(sum(m["vd1"] for m in metrics) / len(metrics), 1) if metrics else 0
         context["avg_vd2"] = round(sum(m["vd2"] for m in metrics) / len(metrics), 1) if metrics else 0

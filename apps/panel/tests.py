@@ -50,6 +50,33 @@ class MemberCreateViewTests(TestCase):
         self.assertEqual(member.next_payment_date, add_one_month(member.start_date))
 
 
+class StudyDataRangeValidationTests(TestCase):
+    """La pantalla 'Datos del estudio' avisa cuando el rango es inválido
+    (inicio posterior al fin) en vez de mostrar una tabla vacía."""
+
+    def setUp(self):
+        self.coach = User.objects.create_user(
+            username="coach@test.com", email="coach@test.com", password="pass1234", is_staff=True
+        )
+        self.client = Client()
+        self.client.force_login(self.coach)
+
+    def test_inverted_range_shows_error_and_no_metrics(self):
+        response = self.client.get(
+            reverse("panel:study-data"), {"start": "2026-11-30", "end": "2026-10-01"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("range_error", response.context)
+        self.assertEqual(list(response.context["metrics"]), [])
+
+    def test_valid_range_has_no_error(self):
+        response = self.client.get(
+            reverse("panel:study-data"), {"start": "2026-10-01", "end": "2026-11-30"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context.get("range_error"))
+
+
 class MarkPaidRecalculatesNextPaymentTests(TestCase):
     def setUp(self):
         self.coach = User.objects.create_user(

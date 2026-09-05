@@ -16,6 +16,9 @@
                style="padding:8px; border-radius:8px; border:none; background:#141414; color:#fff;">
         <button class="btn" type="submit">Filtrar</button>
     </form>
+    {% if range_error %}
+    <p style="color: var(--danger); margin: 10px 0 0;">{{ range_error }}</p>
+    {% endif %}
 </div>
 
 <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">

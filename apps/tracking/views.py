@@ -12,7 +12,13 @@ from .models import WorkoutSessionLog, DailyNutritionLog, BodyMeasurementLog
 from .serializers import (
     WorkoutSessionLogSerializer, DailyNutritionLogSerializer, BodyMeasurementLogSerializer,
 )
-from .services import compute_study_metrics, compute_total_calories_burned, compute_workout_streak
+from .services import (
+    InvalidStudyRange,
+    compute_study_metrics,
+    compute_total_calories_burned,
+    compute_workout_streak,
+    parse_study_range,
+)
 
 
 class WorkoutSessionLogViewSet(viewsets.ModelViewSet):
@@ -105,6 +111,11 @@ class StudyExportView(views.APIView):
     def get(self, request):
         start = request.query_params.get("start")
         end = request.query_params.get("end")
+
+        try:
+            parse_study_range(start, end)
+        except InvalidStudyRange as exc:
+            return HttpResponse(str(exc), status=400, content_type="text/plain; charset=utf-8")
 
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="estudio_constancia.csv"'

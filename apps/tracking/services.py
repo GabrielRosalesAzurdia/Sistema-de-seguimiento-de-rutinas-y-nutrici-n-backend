@@ -35,6 +35,31 @@ def _parse(value):
     return value if isinstance(value, date) else parse_date(value)
 
 
+class InvalidStudyRange(ValueError):
+    """El rango de fechas pedido para el reporte del estudio es inválido
+    (la fecha de inicio es posterior a la de fin)."""
+
+
+def parse_study_range(start, end):
+    """
+    Parsea y valida el par (start, end) de un reporte del estudio.
+
+    Devuelve (range_start, range_end) como `date` o `None`. Lanza
+    `InvalidStudyRange` cuando ambas fechas están presentes y el inicio
+    es posterior al fin — antes ese caso hacía que `compute_study_metrics`
+    devolviera un reporte vacío indistinguible de "sin actividad real".
+    No cambia el cálculo de VD1/VD2: solo valida la entrada antes de
+    llamarlo.
+    """
+    range_start = _parse(start)
+    range_end = _parse(end)
+    if range_start and range_end and range_start > range_end:
+        raise InvalidStudyRange(
+            "La fecha de inicio no puede ser posterior a la fecha de fin."
+        )
+    return range_start, range_end
+
+
 def member_active_window(member, range_start, range_end):
     """
     Devuelve (comp_start, cutoff) para un miembro dado un rango

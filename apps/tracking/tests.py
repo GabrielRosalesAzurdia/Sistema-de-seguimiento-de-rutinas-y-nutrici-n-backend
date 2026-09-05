@@ -7,7 +7,13 @@ from rest_framework.test import APIClient
 from apps.members.models import User, Member
 from apps.routines.models import Routine, RoutineCategory
 from .models import WorkoutSessionLog, DailyNutritionLog
-from .services import compute_total_calories_burned, compute_workout_streak, compute_study_metrics
+from .services import (
+    InvalidStudyRange,
+    compute_study_metrics,
+    compute_total_calories_burned,
+    compute_workout_streak,
+    parse_study_range,
+)
 
 
 class WorkoutStreakAndCaloriesTests(TestCase):
@@ -97,6 +103,43 @@ class IsCoachPermissionTests(TestCase):
         client.force_authenticate(self.member_user)
         response = client.get("/api/tracking/study-export/")
         self.assertEqual(response.status_code, 403)
+
+
+class StudyRangeValidationTests(TestCase):
+    """Antes, un rango con start > end devolvía un reporte vacío
+    indistinguible de 'sin actividad'. Ahora se valida en la entrada."""
+
+    def test_parse_study_range_rejects_inverted_range(self):
+        with self.assertRaises(InvalidStudyRange):
+            parse_study_range("2026-11-30", "2026-10-01")
+
+    def test_parse_study_range_accepts_valid_and_partial_ranges(self):
+        self.assertEqual(
+            parse_study_range("2026-10-01", "2026-11-30"),
+            (timezone.datetime(2026, 10, 1).date(), timezone.datetime(2026, 11, 30).date()),
+        )
+        self.assertEqual(parse_study_range(None, None), (None, None))
+        self.assertEqual(parse_study_range("2026-10-01", None)[1], None)
+        # Mismo día en ambos extremos es válido.
+        parse_study_range("2026-10-15", "2026-10-15")
+
+    def test_study_export_returns_400_on_inverted_range(self):
+        coach = User.objects.create_user(
+            username="c2", email="c2@test.com", password="pass1234", is_staff=True
+        )
+        client = APIClient()
+        client.force_authenticate(coach)
+        response = client.get("/api/tracking/study-export/?start=2026-11-30&end=2026-10-01")
+        self.assertEqual(response.status_code, 400)
+
+    def test_study_export_ok_on_valid_range(self):
+        coach = User.objects.create_user(
+            username="c3", email="c3@test.com", password="pass1234", is_staff=True
+        )
+        client = APIClient()
+        client.force_authenticate(coach)
+        response = client.get("/api/tracking/study-export/?start=2026-10-01&end=2026-11-30")
+        self.assertEqual(response.status_code, 200)
 
 
 class CaloriesBurnedDerivedFromRoutineTests(TestCase):
