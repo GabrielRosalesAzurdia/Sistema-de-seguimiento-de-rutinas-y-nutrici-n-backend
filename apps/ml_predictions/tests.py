@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.test import TestCase
 from rest_framework.test import APIClient
 
@@ -5,7 +7,11 @@ from apps.members.models import Member, User
 from apps.routines.models import Routine, RoutineCategory
 from apps.tracking.models import WorkoutSessionLog
 from .models import MLPrediction
-from .services import MIN_SESSIONS_FOR_RELIABLE_PREDICTION, predict_days_to_goal
+from .services import (
+    MAX_DAYS_TO_GOAL,
+    MIN_SESSIONS_FOR_RELIABLE_PREDICTION,
+    predict_days_to_goal,
+)
 
 
 class ProgressPredictionDedupTests(TestCase):
@@ -68,10 +74,24 @@ class MinSessionsForPredictionTests(TestCase):
         result = predict_days_to_goal(self.member, 0.1, 0.1)
         self.assertIsNone(result["days_to_goal"])
 
-    def test_at_threshold_returns_unbounded_int(self):
+    def test_at_threshold_returns_int_capped_at_max(self):
+        """A partir del umbral de sesiones se devuelve un entero, pero
+        acotado por MAX_DAYS_TO_GOAL: constancia 0.1 + 12 kg de
+        diferencia dispararía la fórmula muy por encima de 2 años."""
         self._log_sessions(MIN_SESSIONS_FOR_RELIABLE_PREDICTION)
         result = predict_days_to_goal(self.member, 0.1, 0.1)
         self.assertIsInstance(result["days_to_goal"], int)
+        self.assertLessEqual(result["days_to_goal"], MAX_DAYS_TO_GOAL)
+
+    def test_heuristic_branch_is_also_capped(self):
+        """El tope se aplica sobre el resultado final, así que cubre la
+        rama de la heurística de respaldo (modelo .joblib ausente), no
+        solo la del Random Forest."""
+        self._log_sessions(MIN_SESSIONS_FOR_RELIABLE_PREDICTION)
+        with patch("apps.ml_predictions.services._load_model", return_value=None):
+            result = predict_days_to_goal(self.member, 0.05, 0.05)
+        self.assertEqual(result["model_type"], "HEURISTIC_PLACEHOLDER")
+        self.assertEqual(result["days_to_goal"], MAX_DAYS_TO_GOAL)
 
     def test_view_and_serializer_propagate_none_without_error(self):
         client = APIClient()

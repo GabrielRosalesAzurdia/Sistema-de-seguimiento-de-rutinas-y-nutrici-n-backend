@@ -29,6 +29,15 @@ MODEL_DIR = Path(__file__).resolve().parent / "trained_models"
 # miembro haga nada, que es justo el caso ruidoso que se quiere evitar.
 MIN_SESSIONS_FOR_RELIABLE_PREDICTION = 3
 
+# Tope superior del valor devuelto por predict_days_to_goal. Tanto la
+# heurística como el Random Forest (entrenado sobre la misma fórmula sin
+# tope) disparan cifras de años para combinaciones de poca constancia +
+# mucho peso pendiente. Se acota el resultado final de AMBAS ramas: 730
+# días (~2 años) es el máximo que una app de fitness debería presentar
+# como estimación creíble. `docs/plan_correcciones.md` deja el valor
+# como decisión de producto abierta; se adopta 730.
+MAX_DAYS_TO_GOAL = 730
+
 
 def _load_model(filename: str):
     path = MODEL_DIR / filename
@@ -88,11 +97,17 @@ def predict_days_to_goal(member, recent_training_adherence: float, recent_nutrit
         days = int(round((weight_diff * base_days_per_kg) / adherence_factor)) if weight_diff else 0
         model_type = "HEURISTIC_PLACEHOLDER"
 
-    # Se evalúa sobre el resultado final, sin importar qué rama lo produjo:
-    # el Random Forest reproduce la misma explosión que la heurística para
-    # combinaciones de poca constancia + mucho peso pendiente (entrenó
-    # sobre esa misma fórmula), así que un fix que solo tocara el `else`
-    # dejaría el problema vivo en la rama que corre casi siempre hoy.
+    # El tope y el piso se aplican sobre el resultado final, sin importar
+    # qué rama lo produjo: el Random Forest reproduce la misma explosión
+    # que la heurística para combinaciones de poca constancia + mucho
+    # peso pendiente (entrenó sobre esa misma fórmula), así que un fix
+    # que solo tocara el `else` dejaría el problema vivo en la rama que
+    # corre casi siempre hoy.
+    days = min(days, MAX_DAYS_TO_GOAL)
+
+    # Con menos de MIN_SESSIONS_FOR_RELIABLE_PREDICTION sesiones el
+    # denominador de constancia es casi cero y cualquier número es ruido:
+    # se devuelve None y el dashboard muestra un guion en su lugar.
     if member.workout_logs.count() < MIN_SESSIONS_FOR_RELIABLE_PREDICTION:
         days = None
 
