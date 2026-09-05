@@ -43,11 +43,11 @@ MIN_SESSIONS_FOR_RELIABLE_PREDICTION = 3
 # Tope superior del valor devuelto por predict_days_to_goal. Tanto la
 # heurística como el Random Forest (entrenado sobre la misma fórmula sin
 # tope) disparan cifras de años para combinaciones de poca constancia +
-# mucho peso pendiente. Se acota el resultado final de AMBAS ramas: 730
-# días (~2 años) es el máximo que una app de fitness debería presentar
+# mucho peso pendiente. Se acota el resultado final de AMBAS ramas: 365
+# días (~1 año) es el máximo que una app de fitness debería presentar
 # como estimación creíble. `docs/plan_correcciones.md` deja el valor
-# como decisión de producto abierta; se adopta 730.
-MAX_DAYS_TO_GOAL = 730
+# como decisión de producto abierta; se adopta 365.
+MAX_DAYS_TO_GOAL = 365
 
 
 def _load_model(filename: str):

@@ -153,22 +153,25 @@ class MinSessionsForPredictionTests(TestCase):
 
     def test_at_threshold_returns_int_capped_at_max(self):
         """A partir del umbral de sesiones se devuelve un entero, pero
-        acotado por MAX_DAYS_TO_GOAL: constancia 0.1 + 12 kg de
-        diferencia dispararía la fórmula muy por encima de 2 años."""
+        acotado por MAX_DAYS_TO_GOAL (365): constancia 0.1 + 12 kg de
+        diferencia dispararía la fórmula muy por encima de un año."""
         self._log_sessions(MIN_SESSIONS_FOR_RELIABLE_PREDICTION)
         result = predict_days_to_goal(self.member, 0.1, 0.1)
         self.assertIsInstance(result["days_to_goal"], int)
+        self.assertEqual(MAX_DAYS_TO_GOAL, 365)
         self.assertLessEqual(result["days_to_goal"], MAX_DAYS_TO_GOAL)
 
     def test_heuristic_branch_is_also_capped(self):
         """El tope se aplica sobre el resultado final, así que cubre la
         rama de la heurística de respaldo (modelo .joblib ausente), no
-        solo la del Random Forest."""
+        solo la del Random Forest. 12 kg / constancia 0.05 -> 840 días
+        crudos, que se acotan a MAX_DAYS_TO_GOAL (365)."""
         self._log_sessions(MIN_SESSIONS_FOR_RELIABLE_PREDICTION)
         with patch("apps.ml_predictions.services._load_model", return_value=None):
             result = predict_days_to_goal(self.member, 0.05, 0.05)
         self.assertEqual(result["model_type"], "HEURISTIC_PLACEHOLDER")
         self.assertEqual(result["days_to_goal"], MAX_DAYS_TO_GOAL)
+        self.assertEqual(result["days_to_goal"], 365)
 
     def test_view_and_serializer_propagate_none_without_error(self):
         client = APIClient()
