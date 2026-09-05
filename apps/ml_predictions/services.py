@@ -20,6 +20,15 @@ import pandas as pd
 
 MODEL_DIR = Path(__file__).resolve().parent / "trained_models"
 
+# Con menos de 3 sesiones registradas, el denominador de constancia que
+# alimenta tanto la heurística como el Random Forest (entrenado sobre la
+# misma fórmula sin tope, ver ml/training/generate_synthetic_data.py) es
+# casi cero y el resultado se dispara a cifras de años. Se cuenta en
+# SESIONES registradas, nunca en días transcurridos: si se contara en
+# días, el número aparecería solo por dejar pasar el tiempo sin que el
+# miembro haga nada, que es justo el caso ruidoso que se quiere evitar.
+MIN_SESSIONS_FOR_RELIABLE_PREDICTION = 3
+
 
 def _load_model(filename: str):
     path = MODEL_DIR / filename
@@ -78,6 +87,14 @@ def predict_days_to_goal(member, recent_training_adherence: float, recent_nutrit
         base_days_per_kg = 14  # ~0.5kg/semana como referencia conservadora
         days = int(round((weight_diff * base_days_per_kg) / adherence_factor)) if weight_diff else 0
         model_type = "HEURISTIC_PLACEHOLDER"
+
+    # Se evalúa sobre el resultado final, sin importar qué rama lo produjo:
+    # el Random Forest reproduce la misma explosión que la heurística para
+    # combinaciones de poca constancia + mucho peso pendiente (entrenó
+    # sobre esa misma fórmula), así que un fix que solo tocara el `else`
+    # dejaría el problema vivo en la rama que corre casi siempre hoy.
+    if member.workout_logs.count() < MIN_SESSIONS_FOR_RELIABLE_PREDICTION:
+        days = None
 
     return {"days_to_goal": days, "model_type": model_type, "input_features": features}
 

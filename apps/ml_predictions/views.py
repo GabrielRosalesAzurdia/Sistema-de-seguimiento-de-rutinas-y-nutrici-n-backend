@@ -38,21 +38,37 @@ class MyProgressPredictionView(views.APIView):
         # (p. ej. el dashboard hace varias cargas/refrescos), se
         # reutiliza en vez de crear una fila nueva en cada GET (antes
         # esto inundaba la tabla de MLPrediction con filas RANDOM_FOREST
-        # repetidas — feedback de la prueba E2E).
+        # repetidas — feedback de la prueba E2E). Excepción: si la
+        # predicción del día quedó en null por datos insuficientes, NO
+        # se reutiliza — se recalcula en cada carga hasta que el
+        # miembro cruce el umbral de sesiones (si no, un miembro que
+        # cruza el umbral a mitad del día seguía viendo el guion hasta
+        # el día siguiente).
         today_prediction = MLPrediction.objects.filter(
             member=member, created_at__date=timezone.localdate()
         ).order_by("-created_at").first()
-        if today_prediction:
+        if today_prediction and today_prediction.predicted_days_to_goal is not None:
             return Response(MLPredictionSerializer(today_prediction).data)
 
         result = predict_days_to_goal(member, training_adherence, nutrition_adherence)
-
-        prediction = MLPrediction.objects.create(
-            member=member,
-            model_type=result["model_type"] if result["model_type"] in dict(MLPrediction.ModelType.choices) else MLPrediction.ModelType.RANDOM_FOREST,
-            input_features=result["input_features"],
-            predicted_days_to_goal=result["days_to_goal"],
+        model_type = (
+            result["model_type"] if result["model_type"] in dict(MLPrediction.ModelType.choices)
+            else MLPrediction.ModelType.RANDOM_FOREST
         )
+
+        if today_prediction:
+            today_prediction.model_type = model_type
+            today_prediction.input_features = result["input_features"]
+            today_prediction.predicted_days_to_goal = result["days_to_goal"]
+            today_prediction.save()
+            prediction = today_prediction
+        else:
+            prediction = MLPrediction.objects.create(
+                member=member,
+                model_type=model_type,
+                input_features=result["input_features"],
+                predicted_days_to_goal=result["days_to_goal"],
+            )
 
         return Response(MLPredictionSerializer(prediction).data)
 
