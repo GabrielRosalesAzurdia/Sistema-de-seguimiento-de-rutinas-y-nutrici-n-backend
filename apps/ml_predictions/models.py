@@ -14,6 +14,12 @@ class MLPrediction(models.Model):
     class ModelType(models.TextChoices):
         LINEAR_REGRESSION = "LINEAR_REGRESSION", "Regresión Lineal"
         RANDOM_FOREST = "RANDOM_FOREST", "Random Forest Regressor"
+        # Estimación determinística de respaldo que corre cuando el
+        # artefacto .joblib no está disponible en disco (ver
+        # apps/ml_predictions/services.py::predict_days_to_goal). Se
+        # guarda con su propia etiqueta para no confundir en los
+        # reportes una heurística con una salida del modelo entrenado.
+        HEURISTIC_PLACEHOLDER = "HEURISTIC_PLACEHOLDER", "Heurística de respaldo"
 
     member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="ml_predictions")
     model_type = models.CharField(max_length=30, choices=ModelType.choices)

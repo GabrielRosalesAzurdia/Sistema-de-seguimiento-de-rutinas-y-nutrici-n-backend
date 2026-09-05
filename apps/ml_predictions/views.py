@@ -51,10 +51,11 @@ class MyProgressPredictionView(views.APIView):
             return Response(MLPredictionSerializer(today_prediction).data)
 
         result = predict_days_to_goal(member, training_adherence, nutrition_adherence)
-        model_type = (
-            result["model_type"] if result["model_type"] in dict(MLPrediction.ModelType.choices)
-            else MLPrediction.ModelType.RANDOM_FOREST
-        )
+        # El origen del valor (modelo entrenado vs. heurística de
+        # respaldo) se persiste tal cual lo reporta el servicio: todos
+        # los valores posibles están en MLPrediction.ModelType, incluido
+        # HEURISTIC_PLACEHOLDER, así que ya no hace falta reescribirlo.
+        model_type = result["model_type"]
 
         if today_prediction:
             today_prediction.model_type = model_type
