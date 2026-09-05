@@ -16,10 +16,11 @@ class MealTime(models.TextChoices):
 
 class NutritionPlanStatus(models.TextChoices):
     """
-    Todo plan generado (manual o por el modelo de ML) debe ser
-    revisado y aprobado por el coach antes de llegar al usuario
-    (ver panel admin, pantalla 'Nutrición': Dietas por Revisar /
-    Dietas Aprobadas y en Seguimiento).
+    Todo plan, se haya generado automáticamente (heurística
+    determinística de Mifflin-St Jeor, ver apps/nutrition/services.py)
+    o creado a mano, debe ser revisado y aprobado por el coach antes de
+    llegar al usuario (ver panel admin, pantalla 'Nutrición': Dietas
+    por Revisar / Dietas Aprobadas y en Seguimiento).
     """
     PENDING_REVIEW = "PENDING_REVIEW", "Pendiente de revisión"
     APPROVED = "APPROVED", "Aprobada y en seguimiento"
@@ -43,8 +44,21 @@ class NutritionPlan(models.Model):
     carbs_g = models.PositiveSmallIntegerField()
     fats_g = models.PositiveSmallIntegerField()
 
-    # Trazabilidad de cómo se generó el plan (insumo del modelo de ML)
-    generated_by_ml = models.BooleanField(default=False)
+    # Trazabilidad de cómo se generó el plan. Hoy no interviene ningún
+    # modelo entrenado: los planes automáticos los calcula la heurística
+    # determinística de apps/nutrition/services.py. El nombre del campo
+    # se conserva por compatibilidad con la app ya publicada.
+    generated_by_ml = models.BooleanField(
+        default=False,
+        help_text="True si el plan se generó automáticamente por cálculo "
+        "determinístico (Mifflin-St Jeor + multiplicador de actividad + "
+        "reparto de macros por objetivo); False si lo creó una persona a "
+        "mano. No implica que intervenga un modelo de aprendizaje "
+        "automático — hoy no lo hay para nutrición.",
+    )
+    # Enlace opcional a la predicción de MLPrediction que originó el plan.
+    # Reservado para cuando exista un modelo real de nutrición; en el
+    # código actual nunca se asigna.
     ml_prediction = models.ForeignKey(
         "ml_predictions.MLPrediction", null=True, blank=True,
         on_delete=models.SET_NULL, related_name="nutrition_plans",

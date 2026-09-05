@@ -1,14 +1,16 @@
 """
-Generación automática de planes de nutrición ("dieta sugerida por ML").
+Generación automática de planes de nutrición por cálculo determinístico.
 
-Para esta iteración se usa una heurística determinística (Mifflin-St
-Jeor + multiplicador de actividad + reparto de macros por objetivo),
-marcada con `generated_by_ml=True` como placeholder — el mismo patrón
-que ya usa `apps.ml_predictions` con datos sintéticos mientras no haya
-datos reales del estudio (oct-nov 2026) para entrenar un modelo real
-de generación de dietas. El coach siempre revisa/aprueba antes de que
-el plan llegue al miembro, y llena las sugerencias de platillo al
-100% — la heurística nunca toca esos campos de texto.
+El plan lo calcula una heurística determinística (Mifflin-St Jeor +
+multiplicador de actividad + reparto de macros por objetivo). **No
+interviene ningún modelo de aprendizaje automático**: no hay un modelo
+de nutrición entrenado y `NutritionPlan.ml_prediction` nunca se asigna.
+El plan se marca con `generated_by_ml=True` solo para distinguir los
+planes generados automáticamente de los creados a mano (el nombre del
+campo se conserva por compatibilidad con la app ya publicada). El coach
+siempre revisa/aprueba antes de que el plan llegue al miembro, y llena
+las sugerencias de platillo al 100% — la heurística nunca toca esos
+campos de texto.
 """
 from apps.members.models import ActivityLevel, FitnessGoal, Gender
 from .models import MealSuggestion, MealTime, NutritionPlan, NutritionPlanStatus
@@ -100,6 +102,9 @@ def generate_plan_for_member(member) -> NutritionPlan:
     plan = NutritionPlan.objects.create(
         member=member,
         status=NutritionPlanStatus.PENDING_REVIEW,
+        # Plan generado automáticamente por esta heurística determinística
+        # (no por un modelo de ML). El campo mantiene el nombre legado
+        # `generated_by_ml` porque lo consume la app ya publicada.
         generated_by_ml=True,
         is_current=False,
         total_calories=total_calories,
