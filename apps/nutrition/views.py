@@ -35,7 +35,6 @@ class NutritionPlanAdminViewSet(viewsets.ModelViewSet):
     queryset = NutritionPlan.objects.all().prefetch_related("meals")
     serializer_class = NutritionPlanSerializer
     permission_classes = [IsCoach]
-    filterset_fields = ["status", "member"]
 
 
 class ReviewNutritionPlanView(generics.UpdateAPIView):

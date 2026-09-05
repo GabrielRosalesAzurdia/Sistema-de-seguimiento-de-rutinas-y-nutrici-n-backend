@@ -58,8 +58,6 @@ class MemberAdminViewSet(viewsets.ModelViewSet):
     queryset = Member.objects.all()
     serializer_class = MemberAdminSerializer
     permission_classes = [IsCoach]
-    filterset_fields = ["is_active", "is_paid", "fitness_goal"]
-    search_fields = ["first_name", "first_last_name", "email"]
 
 
 class MyProfileView(generics.RetrieveUpdateAPIView):
