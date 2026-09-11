@@ -2,9 +2,11 @@ import datetime
 
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.members.models import Member, User
 from apps.nutrition.models import NutritionPlan, MealSuggestion, MealTime
+from apps.tracking.models import DailyNutritionLog, NutritionCheckStatus
 from .utils import add_one_month
 from .views import MealSuggestionFormSet
 
@@ -138,6 +140,49 @@ class MarkPaidRecalculatesNextPaymentTests(TestCase):
         })
         self.member.refresh_from_db()
         self.assertEqual(self.member.next_payment_date, add_one_month(timezone.localdate()))
+
+
+class DashboardActivityScopedToCurrentMonthTests(TestCase):
+    """Feedback: 'days_with_log' del widget de actividad reciente contaba
+    todo el histórico de DailyNutritionLog contra una meta mensual
+    (planned_nutrition_days), así que un miembro con varios meses de
+    antigüedad siempre se veía muy por encima de su meta. Ahora solo
+    cuenta los registros del mes calendario en curso."""
+
+    def setUp(self):
+        self.coach = User.objects.create_user(
+            username="coach4@test.com", email="coach4@test.com", password="pass1234", is_staff=True
+        )
+        member_user = User.objects.create_user(
+            username="miembro4@test.com", email="miembro4@test.com", password="pass1234"
+        )
+        self.member = Member.objects.create(
+            user=member_user, first_name="Carla", first_last_name="Diaz", age=25, height_cm="165.0",
+            planned_training_days=20, planned_nutrition_days=30,
+        )
+        self.client = Client()
+        self.client.force_login(self.coach)
+
+    def test_counts_only_logs_from_the_current_month(self):
+        today = timezone.localdate()
+        last_month = (today.replace(day=1) - datetime.timedelta(days=1))
+        DailyNutritionLog.objects.create(
+            member=self.member, date=last_month, status=NutritionCheckStatus.HECHO,
+        )
+        for offset in range(3):
+            DailyNutritionLog.objects.create(
+                member=self.member, date=today.replace(day=1) + datetime.timedelta(days=offset),
+                status=NutritionCheckStatus.HECHO,
+            )
+
+        response = self.client.get(reverse("panel:dashboard"))
+        row = next(r for r in response.context["activity"] if r["member"].pk == self.member.pk)
+        self.assertEqual(row["days_with_log"], 3)
+
+    def test_header_says_personal_monthly_goal(self):
+        html = self.client.get(reverse("panel:dashboard")).content.decode()
+        self.assertIn("Meta personal del mes", html)
+        self.assertNotIn("Días de Nutrición (registrados/planificados)", html)
 
 
 class NutritionPlanSupersedeTests(TestCase):

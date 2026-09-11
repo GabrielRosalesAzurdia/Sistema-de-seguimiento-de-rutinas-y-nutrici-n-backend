@@ -69,13 +69,17 @@ class DashboardView(CoachRequiredMixin, TemplateView):
             round(sum(m["vd2"] for m in metrics) / len(metrics), 1) if metrics else 0
         )
 
+        today = timezone.localdate()
         activity = []
         for member in Member.objects.filter(is_active=True).order_by("-updated_at")[:15]:
             last_session = member.workout_logs.order_by("-completed_at").first()
+            days_with_log_this_month = member.nutrition_logs.filter(
+                date__year=today.year, date__month=today.month,
+            ).count()
             activity.append({
                 "member": member,
                 "last_session": last_session.completed_at if last_session else None,
-                "days_with_log": member.nutrition_logs.count(),
+                "days_with_log": days_with_log_this_month,
                 "planned_nutrition_days": member.planned_nutrition_days,
             })
         context["activity"] = activity
