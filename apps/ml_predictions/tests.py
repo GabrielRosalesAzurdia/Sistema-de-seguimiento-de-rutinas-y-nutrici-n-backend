@@ -74,9 +74,16 @@ class RecentAdherenceTests(TestCase):
 
     def _log_workouts(self, member, count):
         routine = Routine.objects.create(category=RoutineCategory.PECHO)
-        for _ in range(count):
-            WorkoutSessionLog.objects.create(
+        today = timezone.localdate()
+        for i in range(count):
+            log = WorkoutSessionLog.objects.create(
                 member=member, routine=routine, duration_minutes=40,
+            )
+            WorkoutSessionLog.objects.filter(pk=log.pk).update(
+                completed_at=timezone.make_aware(
+                    timezone.datetime.combine(today - timedelta(days=i), timezone.datetime.min.time())
+                    + timedelta(hours=12)
+                )
             )
 
     def test_training_adherence_uses_planned_training_days_not_constant_12(self):
@@ -115,6 +122,19 @@ class RecentAdherenceTests(TestCase):
             )
         _, nutrition = compute_recent_adherence(member)
         self.assertEqual(nutrition, 1.0)
+
+    def test_two_sessions_same_day_count_as_one_recent_workout(self):
+        """Igual que en apps.tracking: "Workout"/"ABS" del catálogo no
+        tienen día asignado, así que un miembro puede registrar la rutina
+        del día y una de esas el mismo día. No debe inflar la constancia
+        reciente que alimenta "días para meta"."""
+        member = self._member(planned_training_days=4)
+        routine_a = Routine.objects.create(category=RoutineCategory.PECHO)
+        routine_b = Routine.objects.create(category=RoutineCategory.CARDIO)
+        WorkoutSessionLog.objects.create(member=member, routine=routine_a, duration_minutes=40)
+        WorkoutSessionLog.objects.create(member=member, routine=routine_b, duration_minutes=20)
+        training, _ = compute_recent_adherence(member)
+        self.assertAlmostEqual(training, 0.25)  # 1 día / 4, no 2 / 4
 
 
 class MinSessionsForPredictionTests(TestCase):

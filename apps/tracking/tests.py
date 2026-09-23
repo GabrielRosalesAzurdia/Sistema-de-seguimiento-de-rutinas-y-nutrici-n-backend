@@ -186,11 +186,20 @@ class StudyMetricsPlannedDaysTests(TestCase):
         )
         self.routine = Routine.objects.create(category=RoutineCategory.PECHO, estimated_calories=300)
 
-    def test_vd1_uses_planned_training_days_as_denominator(self):
-        for i in range(5):
-            WorkoutSessionLog.objects.create(
-                member=self.member, routine=self.routine, duration_minutes=30, calories_burned=300,
+    def _log_on(self, day):
+        log = WorkoutSessionLog.objects.create(
+            member=self.member, routine=self.routine, duration_minutes=30, calories_burned=300,
+        )
+        WorkoutSessionLog.objects.filter(pk=log.pk).update(
+            completed_at=timezone.make_aware(
+                timezone.datetime.combine(day, timezone.datetime.min.time()) + timedelta(hours=12)
             )
+        )
+
+    def test_vd1_uses_planned_training_days_as_denominator(self):
+        today = timezone.localdate()
+        for i in range(5):
+            self._log_on(today - timedelta(days=i))
         metrics = compute_study_metrics()
         row = next(m for m in metrics if m["member"] == self.member)
         self.assertEqual(row["planned"], 10)
@@ -198,10 +207,9 @@ class StudyMetricsPlannedDaysTests(TestCase):
         self.assertEqual(row["vd1"], 50.0)
 
     def test_vd1_can_exceed_100_percent_without_cap(self):
+        today = timezone.localdate()
         for i in range(15):
-            WorkoutSessionLog.objects.create(
-                member=self.member, routine=self.routine, duration_minutes=30, calories_burned=300,
-            )
+            self._log_on(today - timedelta(days=i))
         metrics = compute_study_metrics()
         row = next(m for m in metrics if m["member"] == self.member)
         self.assertEqual(row["vd1"], 150.0)
@@ -380,3 +388,57 @@ class StudyMetricsSecondaryIndicatorsTests(TestCase):
         row = next(m for m in metrics if m["member"] == self.member)
         self.assertIsNone(row["vd1_variation"])
         self.assertIsNone(row["vd2_variation"])
+
+
+class VD1DistinctDayDedupTests(TestCase):
+    """"Workout"/"ABS" (catálogo, sin día asignado en el calendario) se
+    pueden registrar el mismo día que la rutina programada. Antes eso
+    sumaba 2 sesiones a VD1/frecuencia semanal/variación por un solo día
+    de esfuerzo real; ahora se cuentan días distintos, no filas."""
+
+    def setUp(self):
+        user = User.objects.create_user(
+            username="dedup@test.com", email="dedup@test.com", password="pass1234"
+        )
+        self.member = Member.objects.create(
+            user=user, first_name="Dedup", first_last_name="Test", age=25, height_cm="170.0",
+            planned_training_days=10, planned_nutrition_days=10, participates_in_study=True,
+        )
+        self.routine_a = Routine.objects.create(category=RoutineCategory.PECHO, estimated_calories=300)
+        self.routine_b = Routine.objects.create(category=RoutineCategory.CARDIO, estimated_calories=200)
+
+    def test_two_sessions_same_day_count_as_one_for_vd1(self):
+        WorkoutSessionLog.objects.create(
+            member=self.member, routine=self.routine_a, duration_minutes=40, calories_burned=300,
+        )
+        WorkoutSessionLog.objects.create(
+            member=self.member, routine=self.routine_b, duration_minutes=20, calories_burned=200,
+        )
+        metrics = compute_study_metrics()
+        row = next(m for m in metrics if m["member"] == self.member)
+        self.assertEqual(row["completed"], 1)
+        self.assertEqual(row["vd1"], 10.0)  # 1/10, no 2/10
+
+    def test_weekly_freq_dedupes_same_day_sessions(self):
+        today = timezone.localdate()
+        activation = today - timedelta(days=6)
+        self.member.start_date = activation
+        self.member.save(update_fields=["start_date"])
+        Member.objects.filter(pk=self.member.pk).update(
+            created_at=timezone.make_aware(
+                timezone.datetime.combine(activation, timezone.datetime.min.time())
+            )
+        )
+        self.member.refresh_from_db()
+        for routine in (self.routine_a, self.routine_b):
+            log = WorkoutSessionLog.objects.create(
+                member=self.member, routine=routine, duration_minutes=30, calories_burned=200,
+            )
+            WorkoutSessionLog.objects.filter(pk=log.pk).update(
+                completed_at=timezone.make_aware(
+                    timezone.datetime.combine(today, timezone.datetime.min.time()) + timedelta(hours=12)
+                )
+            )
+        metrics = compute_study_metrics()
+        row = next(m for m in metrics if m["member"] == self.member)
+        self.assertEqual(row["vd1_weekly_freq"], 1.0)  # 1 día distinto / 1 semana, no 2/1

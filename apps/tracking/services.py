@@ -99,6 +99,19 @@ def member_active_window(member, range_start, range_end):
     return comp_start, cutoff
 
 
+def count_distinct_workout_days(queryset):
+    """
+    Días distintos con al menos una WorkoutSessionLog, no el total de
+    filas. `Workout`/`ABS` (catálogo) no tienen día asignado en el
+    calendario semanal, así que un miembro puede registrar la rutina del
+    día y una de esas el mismo día — sin este dedup, ese día contaba como
+    2 sesiones para VD1/frecuencia semanal/constancia reciente en vez de
+    1. Función pública: también la usa
+    apps.ml_predictions.services.compute_recent_adherence.
+    """
+    return queryset.dates("completed_at", "day").count()
+
+
 def _week_buckets(comp_start, cutoff, num_weeks):
     """Buckets de 7 días calendario desde comp_start; el último puede
     quedar incompleto si el rango no es múltiplo de 7."""
@@ -139,7 +152,7 @@ def _compute_secondary_indicators(member, comp_start, cutoff, planned):
     workouts = member.workout_logs.filter(completed_at__date__gte=comp_start, completed_at__date__lte=cutoff)
     nutrition_logs = member.nutrition_logs.filter(date__gte=comp_start, date__lte=cutoff)
 
-    completed = workouts.count()
+    completed = count_distinct_workout_days(workouts)
     vd1_weekly_freq = round(completed / num_weeks, 2)
     avg_duration = workouts.aggregate(avg=Avg("duration_minutes"))["avg"]
     vd1_avg_duration = round(avg_duration, 1) if avg_duration is not None else 0
@@ -160,8 +173,8 @@ def _compute_secondary_indicators(member, comp_start, cutoff, planned):
     else:
         (f_start, f_end), (s_start, s_end) = _half_split(comp_start, cutoff, range_days)
 
-        vd1_first = workouts.filter(completed_at__date__gte=f_start, completed_at__date__lte=f_end).count()
-        vd1_second = workouts.filter(completed_at__date__gte=s_start, completed_at__date__lte=s_end).count()
+        vd1_first = count_distinct_workout_days(workouts.filter(completed_at__date__gte=f_start, completed_at__date__lte=f_end))
+        vd1_second = count_distinct_workout_days(workouts.filter(completed_at__date__gte=s_start, completed_at__date__lte=s_end))
         vd1_pct_first = round(vd1_first / planned * 100, 1) if planned else 0
         vd1_pct_second = round(vd1_second / planned * 100, 1) if planned else 0
         vd1_variation = round(vd1_pct_second - vd1_pct_first, 1)
@@ -211,7 +224,7 @@ def compute_study_metrics(start=None, end=None):
             workouts = workouts.filter(completed_at__date__lte=range_end)
             nutrition_logs = nutrition_logs.filter(date__lte=range_end)
 
-        completed = workouts.count()
+        completed = count_distinct_workout_days(workouts)
         planned = member.planned_training_days
         vd1 = round((completed / planned) * 100, 1) if planned else 0
 

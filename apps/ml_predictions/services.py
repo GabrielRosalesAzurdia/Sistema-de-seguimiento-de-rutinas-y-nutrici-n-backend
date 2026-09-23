@@ -21,7 +21,7 @@ import joblib
 import pandas as pd
 from django.utils import timezone
 
-from apps.tracking.services import member_active_window
+from apps.tracking.services import count_distinct_workout_days, member_active_window
 
 MODEL_DIR = Path(__file__).resolve().parent / "trained_models"
 
@@ -78,9 +78,9 @@ def compute_recent_adherence(member, days: int = RECENT_ADHERENCE_WINDOW_DAYS):
     window_start = today - timedelta(days=days)
     comp_start, cutoff = member_active_window(member, window_start, today)
 
-    recent_workouts = member.workout_logs.filter(
+    recent_workouts = count_distinct_workout_days(member.workout_logs.filter(
         completed_at__date__gte=window_start, completed_at__date__lte=today
-    ).count()
+    ))
     training_adherence = (
         min(recent_workouts / member.planned_training_days, 1.0)
         if member.planned_training_days
