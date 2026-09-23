@@ -7,14 +7,25 @@ class RoutineCategory(models.TextChoices):
     Las 7 categorías de rutina confirmadas en reunión 2 (15/abr/2026):
     Pierna-Cuádriceps, Pecho, Brazos y Espalda, Cardio, ABS,
     Pierna-Glúteos y Hombro (agregada en esa misma reunión).
+
+    PIERNA_CUADRICEPS_CIRCUITO y PECHO_HOMBRO_TRICEPS se agregaron el
+    2026-09-23: son rutinas exclusivas del calendario de mujeres
+    (miércoles y jueves respectivamente) que no se pueden modelar
+    reasignando una categoría existente porque `Routine.category` es
+    único y esas categorías ya las comparten con los hombres en otros
+    días. El valor de choice de CARDIO se mantiene por compatibilidad
+    con datos existentes; solo cambia la etiqueta visible a "Workout"
+    (nombre con el que el coach lo pidió).
     """
     PIERNA_CUADRICEPS = "PIERNA_CUADRICEPS", "Pierna - Cuádriceps"
     PECHO = "PECHO", "Pecho"
     BRAZOS_ESPALDA = "BRAZOS_ESPALDA", "Brazos y Espalda"
-    CARDIO = "CARDIO", "Cardio"
+    CARDIO = "CARDIO", "Workout"
     ABS = "ABS", "ABS"
     PIERNA_GLUTEOS = "PIERNA_GLUTEOS", "Pierna - Glúteos"
     HOMBRO = "HOMBRO", "Hombro"
+    PIERNA_CUADRICEPS_CIRCUITO = "PIERNA_CUADRICEPS_CIRCUITO", "Pierna Cuádriceps + Circuito (Mujeres)"
+    PECHO_HOMBRO_TRICEPS = "PECHO_HOMBRO_TRICEPS", "Pecho, Hombro y Tríceps (Mujeres)"
 
 
 class Exercise(models.Model):
@@ -26,7 +37,7 @@ class Exercise(models.Model):
     el coach en reunión 2, E2).
     """
     name = models.CharField("Nombre", max_length=150, unique=True)
-    category = models.CharField(max_length=20, choices=RoutineCategory.choices)
+    category = models.CharField(max_length=30, choices=RoutineCategory.choices)
     icon = models.ImageField(upload_to="exercise_icons/", null=True, blank=True)
     reference_photo = models.ImageField(upload_to="exercise_photos/", null=True, blank=True)
     is_active = models.BooleanField(default=True)
@@ -48,7 +59,7 @@ class Routine(models.Model):
     editado por el coach desde el panel de administración.
     """
     category = models.CharField(
-        max_length=20, choices=RoutineCategory.choices, unique=True
+        max_length=30, choices=RoutineCategory.choices, unique=True
     )
     estimated_duration_min_low = models.PositiveSmallIntegerField(default=60)
     estimated_duration_min_high = models.PositiveSmallIntegerField(default=90)
@@ -110,7 +121,7 @@ class ScheduledRoutineDay(models.Model):
     """
     day_of_week = models.PositiveSmallIntegerField("Día", choices=Weekday.choices)
     gender = models.CharField(max_length=10, choices=Gender.choices)
-    category = models.CharField(max_length=20, choices=RoutineCategory.choices)
+    category = models.CharField(max_length=30, choices=RoutineCategory.choices)
 
     class Meta:
         verbose_name = "Día de calendario semanal"
