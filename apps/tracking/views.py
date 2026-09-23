@@ -1,16 +1,17 @@
 import csv
 from django.db.models import Count, Q
 from django.http import HttpResponse
-from rest_framework import viewsets, permissions, views
+from rest_framework import mixins, viewsets, permissions, views
 from rest_framework.authentication import SessionAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
 
 from common.permissions import IsCoach, IsOwnerOrCoach
 from apps.members.models import Member
-from .models import WorkoutSessionLog, DailyNutritionLog, BodyMeasurementLog
+from .models import WorkoutSessionLog, WorkoutExerciseEntry, DailyNutritionLog, BodyMeasurementLog
 from .serializers import (
-    WorkoutSessionLogSerializer, DailyNutritionLogSerializer, BodyMeasurementLogSerializer,
+    WorkoutSessionLogSerializer, WorkoutSessionHistorySerializer,
+    DailyNutritionLogSerializer, BodyMeasurementLogSerializer,
 )
 from .services import (
     InvalidStudyRange,
@@ -32,6 +33,51 @@ class WorkoutSessionLogViewSet(viewsets.ModelViewSet):
         if user.is_staff:
             return WorkoutSessionLog.objects.all().prefetch_related("exercise_entries")
         return WorkoutSessionLog.objects.filter(member=user.member_profile)
+
+
+class MyWorkoutHistoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    """
+    Historial de sesiones del miembro autenticado, de solo lectura
+    (pantalla 'Historial' de la app — a diferencia de
+    WorkoutSessionLogViewSet, que además permite registrar). Paginado
+    con el PageNumberPagination global del proyecto (PAGE_SIZE=20);
+    ordenado por fecha descendente vía Meta.ordering del modelo.
+    """
+    serializer_class = WorkoutSessionHistorySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return (
+            WorkoutSessionLog.objects
+            .filter(member=self.request.user.member_profile)
+            .select_related("routine")
+            .prefetch_related("exercise_entries__exercise")
+        )
+
+
+class MyExerciseProgressView(views.APIView):
+    """
+    Progreso de peso final registrado para UN ejercicio, a través de
+    todas las sesiones históricas del miembro autenticado — alimenta la
+    gráfica opcional de la pantalla de Historial. Solo lectura.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, exercise_id):
+        member = request.user.member_profile
+        entries = (
+            WorkoutExerciseEntry.objects
+            .filter(session__member=member, exercise_id=exercise_id)
+            .select_related("session")
+            .order_by("session__completed_at")
+        )
+        return Response([
+            {
+                "date": entry.session.completed_at.date(),
+                "final_weight_lb": entry.final_weight_lb,
+            }
+            for entry in entries
+        ])
 
 
 class DailyNutritionLogViewSet(viewsets.ModelViewSet):

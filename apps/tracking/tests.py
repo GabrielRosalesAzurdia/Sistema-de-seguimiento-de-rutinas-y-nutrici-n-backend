@@ -5,8 +5,8 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.members.models import User, Member
-from apps.routines.models import Routine, RoutineCategory
-from .models import WorkoutSessionLog, DailyNutritionLog
+from apps.routines.models import Exercise, Routine, RoutineCategory, RoutineExercise
+from .models import WorkoutExerciseEntry, WorkoutSessionLog, DailyNutritionLog
 from .services import (
     InvalidStudyRange,
     compute_study_metrics,
@@ -442,3 +442,124 @@ class VD1DistinctDayDedupTests(TestCase):
         metrics = compute_study_metrics()
         row = next(m for m in metrics if m["member"] == self.member)
         self.assertEqual(row["vd1_weekly_freq"], 1.0)  # 1 día distinto / 1 semana, no 2/1
+
+
+class WorkoutHistoryEndpointTests(TestCase):
+    """Pantalla 'Historial' de la app (Track de historial, feature nueva):
+    endpoint de solo lectura, propio del miembro autenticado, paginado."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="historial@test.com", email="historial@test.com", password="pass1234"
+        )
+        self.member = Member.objects.create(
+            user=self.user, first_name="Hist", first_last_name="Test", age=25, height_cm="170.0",
+            planned_training_days=20, planned_nutrition_days=30,
+        )
+        self.other_user = User.objects.create_user(
+            username="otro@test.com", email="otro@test.com", password="pass1234"
+        )
+        self.other_member = Member.objects.create(
+            user=self.other_user, first_name="Otro", first_last_name="Miembro", age=25, height_cm="170.0",
+            planned_training_days=20, planned_nutrition_days=30,
+        )
+        self.routine = Routine.objects.create(category=RoutineCategory.PECHO, estimated_calories=400)
+        self.exercise = Exercise.objects.create(name="Despechadas", category=RoutineCategory.PECHO)
+        RoutineExercise.objects.create(routine=self.routine, exercise=self.exercise, order=1)
+
+        self.session = WorkoutSessionLog.objects.create(
+            member=self.member, routine=self.routine, duration_minutes=45, calories_burned=400,
+        )
+        WorkoutExerciseEntry.objects.create(
+            session=self.session, exercise=self.exercise,
+            initial_weight_lb=100, final_weight_lb=120, reps_completed=10,
+        )
+        self.other_session = WorkoutSessionLog.objects.create(
+            member=self.other_member, routine=self.routine, duration_minutes=30, calories_burned=300,
+        )
+
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+
+    def test_history_only_returns_own_sessions(self):
+        response = self.client.get("/api/tracking/me/workout-history/")
+        self.assertEqual(response.status_code, 200)
+        ids = [row["id"] for row in response.data["results"]]
+        self.assertIn(self.session.id, ids)
+        self.assertNotIn(self.other_session.id, ids)
+
+    def test_history_is_paginated(self):
+        response = self.client.get("/api/tracking/me/workout-history/")
+        self.assertIn("count", response.data)
+        self.assertIn("results", response.data)
+
+    def test_history_includes_routine_category_display_and_exercise_entries(self):
+        response = self.client.get("/api/tracking/me/workout-history/")
+        row = next(r for r in response.data["results"] if r["id"] == self.session.id)
+        self.assertEqual(row["routine_category_display"], "Pecho")
+        self.assertEqual(len(row["exercise_entries"]), 1)
+        entry = row["exercise_entries"][0]
+        self.assertEqual(entry["exercise_name"], "Despechadas")
+        self.assertEqual(float(entry["initial_weight_lb"]), 100.0)
+        self.assertEqual(float(entry["final_weight_lb"]), 120.0)
+        self.assertEqual(entry["reps_completed"], 10)
+
+    def test_history_detail_endpoint(self):
+        response = self.client.get(f"/api/tracking/me/workout-history/{self.session.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["id"], self.session.id)
+
+    def test_cannot_retrieve_another_members_session_via_history(self):
+        response = self.client.get(f"/api/tracking/me/workout-history/{self.other_session.id}/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_unauthenticated_request_is_rejected(self):
+        client = APIClient()
+        response = client.get("/api/tracking/me/workout-history/")
+        self.assertEqual(response.status_code, 401)
+
+
+class ExerciseProgressEndpointTests(TestCase):
+    """Progreso de peso por ejercicio (gráfica opcional de Historial):
+    solo devuelve entradas del propio miembro, ordenadas por fecha."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="progreso@test.com", email="progreso@test.com", password="pass1234"
+        )
+        self.member = Member.objects.create(
+            user=self.user, first_name="Prog", first_last_name="Test", age=25, height_cm="170.0",
+            planned_training_days=20, planned_nutrition_days=30,
+        )
+        self.routine = Routine.objects.create(category=RoutineCategory.PECHO, estimated_calories=400)
+        self.exercise = Exercise.objects.create(name="Pecho Plano", category=RoutineCategory.PECHO)
+        self.other_exercise = Exercise.objects.create(name="Cross Over", category=RoutineCategory.PECHO)
+
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+
+    def _log(self, exercise, final_weight, day):
+        session = WorkoutSessionLog.objects.create(
+            member=self.member, routine=self.routine, duration_minutes=40, calories_burned=400,
+        )
+        WorkoutSessionLog.objects.filter(pk=session.pk).update(
+            completed_at=timezone.make_aware(
+                timezone.datetime.combine(day, timezone.datetime.min.time()) + timedelta(hours=12)
+            )
+        )
+        WorkoutExerciseEntry.objects.create(
+            session=session, exercise=exercise,
+            initial_weight_lb=final_weight - 10, final_weight_lb=final_weight, reps_completed=8,
+        )
+
+    def test_progress_returns_only_entries_for_that_exercise_ordered_by_date(self):
+        today = timezone.localdate()
+        self._log(self.exercise, 100, today - timedelta(days=2))
+        self._log(self.other_exercise, 999, today - timedelta(days=1))  # otro ejercicio, no debe aparecer
+        self._log(self.exercise, 110, today)
+
+        response = self.client.get(f"/api/tracking/me/exercise-progress/{self.exercise.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(float(response.data[0]["final_weight_lb"]), 100.0)
+        self.assertEqual(float(response.data[1]["final_weight_lb"]), 110.0)
