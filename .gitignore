@@ -15,6 +15,11 @@ venv/
 .idea/
 .vscode/
 
+# Datos reales de participantes del estudio (nombres, teléfonos,
+# correos, contraseñas temporales): nunca deben ir a git.
+participantes_fitness_club.json
+reporte_alta.csv
+
 # Dumps de migración Neon -> Render: contienen datos reales de
 # miembros (peso, medidas, teléfono), nunca deben ir a git.
 scripts/db-migration/backups/*.dump
