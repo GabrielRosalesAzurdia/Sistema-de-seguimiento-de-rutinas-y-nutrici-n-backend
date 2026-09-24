@@ -37,8 +37,8 @@ class LoadRoutineSeedTests(TestCase):
     def tearDown(self):
         self.seed_file.unlink(missing_ok=True)
 
-    def _run(self):
-        call_command("load_routine_seed", file=str(self.seed_file))
+    def _run(self, prune=False):
+        call_command("load_routine_seed", file=str(self.seed_file), prune=prune)
 
     def test_creates_routine_exercises_and_ordered_links(self):
         self._run()
@@ -50,18 +50,34 @@ class LoadRoutineSeedTests(TestCase):
             [("Despechadas", 1), ("Pecho Plano", 2)],
         )
 
-    def test_deletes_stray_exercise_in_covered_category(self):
+    def test_default_run_does_not_delete_stray_exercise_in_covered_category(self):
         Exercise.objects.create(name="Ejercicio Viejo", category=RoutineCategory.PECHO)
 
         self._run()
 
+        self.assertTrue(Exercise.objects.filter(name="Ejercicio Viejo").exists())
+
+    def test_prune_deletes_stray_exercise_in_covered_category(self):
+        Exercise.objects.create(name="Ejercicio Viejo", category=RoutineCategory.PECHO)
+
+        self._run(prune=True)
+
         self.assertFalse(Exercise.objects.filter(name="Ejercicio Viejo").exists())
 
-    def test_deletes_routine_and_exercises_for_categories_not_in_seed(self):
+    def test_default_run_does_not_delete_categories_not_in_seed(self):
         Routine.objects.create(category=RoutineCategory.CARDIO)
         Exercise.objects.create(name="Trote (placeholder)", category=RoutineCategory.CARDIO)
 
         self._run()
+
+        self.assertTrue(Routine.objects.filter(category="CARDIO").exists())
+        self.assertTrue(Exercise.objects.filter(name="Trote (placeholder)").exists())
+
+    def test_prune_deletes_routine_and_exercises_for_categories_not_in_seed(self):
+        Routine.objects.create(category=RoutineCategory.CARDIO)
+        Exercise.objects.create(name="Trote (placeholder)", category=RoutineCategory.CARDIO)
+
+        self._run(prune=True)
 
         self.assertFalse(Routine.objects.filter(category="CARDIO").exists())
         self.assertFalse(Exercise.objects.filter(name="Trote (placeholder)").exists())
@@ -86,8 +102,25 @@ class LoadRoutineSeedTests(TestCase):
             session=session, exercise=stray, initial_weight_lb=10, final_weight_lb=15, reps_completed=10
         )
 
-        self._run()
+        self._run(prune=True)
 
         stray.refresh_from_db()
         self.assertTrue(Exercise.objects.filter(pk=stray.pk).exists())
         self.assertFalse(stray.is_active)
+
+    def test_in_routine_false_entry_creates_exercise_without_routine_link(self):
+        seed = {
+            "routines": SEED["routines"],
+            "exercises": SEED["exercises"] + [
+                {"name": "Reservado Para Después", "category": "PECHO", "in_routine": False},
+            ],
+        }
+        self.seed_file.write_text(json.dumps(seed), encoding="utf-8")
+
+        self._run()
+
+        exercise = Exercise.objects.get(name="Reservado Para Después")
+        self.assertTrue(exercise.is_active)
+        self.assertFalse(RoutineExercise.objects.filter(exercise=exercise).exists())
+        routine = Routine.objects.get(category="PECHO")
+        self.assertEqual(routine.exercises.count(), 2)

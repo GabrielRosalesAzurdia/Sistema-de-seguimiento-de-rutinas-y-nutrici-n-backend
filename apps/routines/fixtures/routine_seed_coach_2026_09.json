@@ -1,0 +1,463 @@
+{
+  "routines": [
+    {
+      "category": "ABS",
+      "estimated_duration_min_low": 15,
+      "estimated_duration_min_high": 15,
+      "estimated_calories": 60
+    },
+    {
+      "category": "BRAZOS_ESPALDA",
+      "estimated_duration_min_low": 67,
+      "estimated_duration_min_high": 83,
+      "estimated_calories": 595
+    },
+    {
+      "category": "CARDIO",
+      "estimated_duration_min_low": 20,
+      "estimated_duration_min_high": 20,
+      "estimated_calories": 240
+    },
+    {
+      "category": "HOMBRO",
+      "estimated_duration_min_low": 40,
+      "estimated_duration_min_high": 55,
+      "estimated_calories": 300
+    },
+    {
+      "category": "PECHO",
+      "estimated_duration_min_low": 62,
+      "estimated_duration_min_high": 78,
+      "estimated_calories": 600
+    },
+    {
+      "category": "PECHO_HOMBRO_TRICEPS",
+      "estimated_duration_min_low": 70,
+      "estimated_duration_min_high": 90,
+      "estimated_calories": 550
+    },
+    {
+      "category": "PIERNA_CUADRICEPS",
+      "estimated_duration_min_low": 77,
+      "estimated_duration_min_high": 93,
+      "estimated_calories": 700
+    },
+    {
+      "category": "PIERNA_CUADRICEPS_CIRCUITO",
+      "estimated_duration_min_low": 77,
+      "estimated_duration_min_high": 93,
+      "estimated_calories": 600
+    },
+    {
+      "category": "PIERNA_GLUTEOS",
+      "estimated_duration_min_low": 72,
+      "estimated_duration_min_high": 88,
+      "estimated_calories": 650
+    }
+  ],
+  "exercises": [
+    {
+      "name": "Crunches",
+      "category": "ABS"
+    },
+    {
+      "name": "Plancha",
+      "category": "ABS"
+    },
+    {
+      "name": "Elevación de Piernas",
+      "category": "ABS"
+    },
+    {
+      "name": "Russian Twist",
+      "category": "ABS"
+    },
+    {
+      "name": "Bicicleta Abdominal",
+      "category": "ABS"
+    },
+    {
+      "name": "Bícep Curl",
+      "category": "BRAZOS_ESPALDA"
+    },
+    {
+      "name": "Bícep Martillo",
+      "category": "BRAZOS_ESPALDA"
+    },
+    {
+      "name": "Martillo Cruzado",
+      "category": "BRAZOS_ESPALDA"
+    },
+    {
+      "name": "Dominadas",
+      "category": "BRAZOS_ESPALDA"
+    },
+    {
+      "name": "Polea abierta",
+      "category": "BRAZOS_ESPALDA"
+    },
+    {
+      "name": "Pull Over Barra",
+      "category": "BRAZOS_ESPALDA"
+    },
+    {
+      "name": "Remo Barra",
+      "category": "BRAZOS_ESPALDA"
+    },
+    {
+      "name": "Remo T",
+      "category": "BRAZOS_ESPALDA"
+    },
+    {
+      "name": "Serrucho",
+      "category": "BRAZOS_ESPALDA"
+    },
+    {
+      "name": "Antebrazo",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Australianas",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Concentrado",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Copa",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Curl 21",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Despechada para Tríceps",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Face Pull",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Fondos",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Polea Cerrada",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Predicador",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Press Francés",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Press Tríceps",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Remo Polea",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Reverse Curl",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Rip 60",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Tríceps Barra",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Tríceps Lazo",
+      "category": "BRAZOS_ESPALDA",
+      "in_routine": false
+    },
+    {
+      "name": "Saltar Cuerda",
+      "category": "CARDIO"
+    },
+    {
+      "name": "Jumping Jacks",
+      "category": "CARDIO"
+    },
+    {
+      "name": "Mountain Climbers",
+      "category": "CARDIO"
+    },
+    {
+      "name": "Sentadilla con Salto",
+      "category": "CARDIO"
+    },
+    {
+      "name": "Elíptica",
+      "category": "CARDIO"
+    },
+    {
+      "name": "Press Militar",
+      "category": "HOMBRO"
+    },
+    {
+      "name": "Hombro Lateral",
+      "category": "HOMBRO"
+    },
+    {
+      "name": "Hombro Frontal",
+      "category": "HOMBRO"
+    },
+    {
+      "name": "Hombro Posterior",
+      "category": "HOMBRO"
+    },
+    {
+      "name": "Jalones al Mentón",
+      "category": "HOMBRO"
+    },
+    {
+      "name": "Despechadas",
+      "category": "PECHO"
+    },
+    {
+      "name": "Pecho Inclinado",
+      "category": "PECHO"
+    },
+    {
+      "name": "Pecho Plano",
+      "category": "PECHO"
+    },
+    {
+      "name": "Pecho Declinado",
+      "category": "PECHO"
+    },
+    {
+      "name": "Flys/Aperturas",
+      "category": "PECHO"
+    },
+    {
+      "name": "Pull Over",
+      "category": "PECHO"
+    },
+    {
+      "name": "Cross Over",
+      "category": "PECHO"
+    },
+    {
+      "name": "Despechadas (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Pecho Inclinado (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Pecho Plano (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Pecho Declinado (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Flys/Aperturas (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Pull Over (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Cross Over (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Press Militar (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Hombro Lateral (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Hombro Frontal (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Hombro Posterior (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Jalones al Mentón (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Tríceps Barra (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Tríceps Lazo (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Press Francés (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Press Tríceps (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Copa (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Fondos (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Despechada para Tríceps (P+H+T)",
+      "category": "PECHO_HOMBRO_TRICEPS"
+    },
+    {
+      "name": "Aductor",
+      "category": "PIERNA_CUADRICEPS"
+    },
+    {
+      "name": "Extensión de Cuádriceps",
+      "category": "PIERNA_CUADRICEPS"
+    },
+    {
+      "name": "Prensa",
+      "category": "PIERNA_CUADRICEPS"
+    },
+    {
+      "name": "Sentadilla Cerrada",
+      "category": "PIERNA_CUADRICEPS"
+    },
+    {
+      "name": "Sentadilla Libre",
+      "category": "PIERNA_CUADRICEPS"
+    },
+    {
+      "name": "Desplantes",
+      "category": "PIERNA_CUADRICEPS",
+      "in_routine": false
+    },
+    {
+      "name": "Sentadilla Búlgara (Cuádriceps)",
+      "category": "PIERNA_CUADRICEPS",
+      "in_routine": false
+    },
+    {
+      "name": "Aductor (Circuito)",
+      "category": "PIERNA_CUADRICEPS_CIRCUITO"
+    },
+    {
+      "name": "Extensión de Cuádriceps (Circuito)",
+      "category": "PIERNA_CUADRICEPS_CIRCUITO"
+    },
+    {
+      "name": "Prensa (Circuito)",
+      "category": "PIERNA_CUADRICEPS_CIRCUITO"
+    },
+    {
+      "name": "Sentadilla Cerrada (Circuito)",
+      "category": "PIERNA_CUADRICEPS_CIRCUITO"
+    },
+    {
+      "name": "Sentadilla Libre (Circuito)",
+      "category": "PIERNA_CUADRICEPS_CIRCUITO"
+    },
+    {
+      "name": "Jumping Jacks (Circuito)",
+      "category": "PIERNA_CUADRICEPS_CIRCUITO"
+    },
+    {
+      "name": "Kettlebell Swing",
+      "category": "PIERNA_CUADRICEPS_CIRCUITO"
+    },
+    {
+      "name": "Burpees",
+      "category": "PIERNA_CUADRICEPS_CIRCUITO"
+    },
+    {
+      "name": "Power Clean",
+      "category": "PIERNA_CUADRICEPS_CIRCUITO"
+    },
+    {
+      "name": "Peso Muerto Femoral",
+      "category": "PIERNA_GLUTEOS"
+    },
+    {
+      "name": "Femoral en Máquina",
+      "category": "PIERNA_GLUTEOS"
+    },
+    {
+      "name": "Sentadilla Sumo (Glúteo)",
+      "category": "PIERNA_GLUTEOS"
+    },
+    {
+      "name": "Elevación de Cadera",
+      "category": "PIERNA_GLUTEOS"
+    },
+    {
+      "name": "Patada de Burro",
+      "category": "PIERNA_GLUTEOS"
+    },
+    {
+      "name": "Abducción de Cadera",
+      "category": "PIERNA_GLUTEOS"
+    },
+    {
+      "name": "Sentadilla Búlgara (Glúteo)",
+      "category": "PIERNA_GLUTEOS"
+    },
+    {
+      "name": "Steps",
+      "category": "PIERNA_GLUTEOS"
+    },
+    {
+      "name": "Elevación de Cadera Unilateral",
+      "category": "PIERNA_GLUTEOS"
+    },
+    {
+      "name": "Peso Muerto Unilateral",
+      "category": "PIERNA_GLUTEOS"
+    },
+    {
+      "name": "Hiperextensiones",
+      "category": "PIERNA_GLUTEOS"
+    },
+    {
+      "name": "Patas Laterales Polea",
+      "category": "PIERNA_GLUTEOS"
+    },
+    {
+      "name": "Reverse Hiperextensiones",
+      "category": "PIERNA_GLUTEOS"
+    }
+  ]
+}
