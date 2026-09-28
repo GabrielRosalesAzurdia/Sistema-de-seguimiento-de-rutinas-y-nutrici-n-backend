@@ -24,8 +24,8 @@ class RoutineCategory(models.TextChoices):
     ABS = "ABS", "ABS"
     PIERNA_GLUTEOS = "PIERNA_GLUTEOS", "Pierna - Glúteos"
     HOMBRO = "HOMBRO", "Hombro"
-    PIERNA_CUADRICEPS_CIRCUITO = "PIERNA_CUADRICEPS_CIRCUITO", "Pierna Cuádriceps + Circuito (Mujeres)"
-    PECHO_HOMBRO_TRICEPS = "PECHO_HOMBRO_TRICEPS", "Pecho, Hombro y Tríceps (Mujeres)"
+    PIERNA_CUADRICEPS_CIRCUITO = "PIERNA_CUADRICEPS_CIRCUITO", "Pierna Cuádriceps + Circuito"
+    PECHO_HOMBRO_TRICEPS = "PECHO_HOMBRO_TRICEPS", "Pecho, Hombro y Tríceps"
 
 
 class Exercise(models.Model):
