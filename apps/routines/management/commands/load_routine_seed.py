@@ -125,15 +125,7 @@ class Command(BaseCommand):
                 exercises_created += created
                 exercises_updated += not created
 
-            # Pre-arma cada rutina con los ejercicios del JSON marcados como
-            # seleccionados (cualquier entrada sin 'in_routine' o con
-            # 'in_routine': true), en el orden en que aparecen. Las marcadas
-            # 'in_routine': false quedan como catálogo (Exercise) pero fuera de
-            # la rutina — así se respeta la última selección semanal del coach
-            # en vez de reseleccionar todo el catálogo en cada corrida. Se
-            # limpia la selección anterior primero (así los Exercise que ya no
-            # aplican quedan libres de referencias de RoutineExercise antes del
-            # paso de borrado de abajo, si --prune está activo).
+            # * Enlaza cada rutina con sus ejercicios "in_routine" (default true), en el orden del JSON.
             for category in {e["category"] for e in routine_entries}:
                 routine = Routine.objects.get(category=category)
                 RoutineExercise.objects.filter(routine=routine).delete()
@@ -149,11 +141,7 @@ class Command(BaseCommand):
                     routine_links_created += 1
 
             if prune:
-                # Cualquier Exercise de una categoría cubierta por el JSON que no
-                # esté en la lista se borra (no se deja como placeholder). Si
-                # tiene historial real (WorkoutExerciseEntry), el PROTECT lo
-                # bloquea: se deja intacto y se reporta, nunca se fuerza el
-                # borrado. Solo corre con --prune (ver help del comando).
+                # Borra Exercise no listados en una categoría cubierta por el JSON; con historial real, se desactiva (PROTECT).
                 kept_names = {e["name"] for e in exercise_entries}
                 for exercise in Exercise.objects.filter(category__in=categories_in_seed).exclude(
                     name__in=kept_names
@@ -162,12 +150,7 @@ class Command(BaseCommand):
                         continue
                     deleted_exercises += 1
 
-                # Categorías que el JSON no menciona en absoluto: se elimina la
-                # rutina completa (cascada a sus RoutineExercise) y su catálogo
-                # de ejercicios. Mismo resguardo de PROTECT — un Routine con
-                # historial (WorkoutSessionLog) no se puede desactivar (no tiene
-                # is_active), así que ese caso solo se reporta, sin tocarlo.
-                # Solo corre con --prune.
+                # Categorías ausentes del JSON: borra rutina + ejercicios; con historial, solo se reporta.
                 for category in categories_excluded:
                     routine = Routine.objects.filter(category=category).first()
                     if routine:

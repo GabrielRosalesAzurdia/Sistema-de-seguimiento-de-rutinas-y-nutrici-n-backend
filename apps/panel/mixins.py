@@ -1,8 +1,4 @@
-"""
-Control de acceso del panel web (equivalente de plantillas al
-`common.permissions.IsCoach` usado en el API DRF): solo el coach
-(is_staff) puede ver cualquier pantalla del panel.
-"""
+"""Control de acceso del panel: solo el coach (is_staff) puede ver cualquier pantalla."""
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 

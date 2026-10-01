@@ -36,13 +36,8 @@ class WorkoutSessionLogViewSet(viewsets.ModelViewSet):
 
 
 class MyWorkoutHistoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    """
-    Historial de sesiones del miembro autenticado, de solo lectura
-    (pantalla 'Historial' de la app — a diferencia de
-    WorkoutSessionLogViewSet, que además permite registrar). Paginado
-    con el PageNumberPagination global del proyecto (PAGE_SIZE=20);
-    ordenado por fecha descendente vía Meta.ordering del modelo.
-    """
+    """Historial de sesiones del miembro autenticado, de solo lectura
+    (pantalla 'Historial' de la app), paginado y ordenado por fecha descendente."""
     serializer_class = WorkoutSessionHistorySerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -56,11 +51,8 @@ class MyWorkoutHistoryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, 
 
 
 class MyExerciseProgressView(views.APIView):
-    """
-    Progreso de peso final registrado para UN ejercicio, a través de
-    todas las sesiones históricas del miembro autenticado — alimenta la
-    gráfica opcional de la pantalla de Historial. Solo lectura.
-    """
+    """Progreso de peso final para un ejercicio, a través de todas las
+    sesiones históricas del miembro autenticado (gráfica de Historial)."""
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, exercise_id):
@@ -105,13 +97,8 @@ class BodyMeasurementLogViewSet(viewsets.ModelViewSet):
 
 
 class MyWeightHistoryView(views.APIView):
-    """
-    Historial de peso del propio miembro autenticado, para la gráfica
-    del dashboard (docs/mockups/app/03_dashboard.jpeg — línea de peso
-    dentro de la card "PESO ACTUAL / META"). `BodyMeasurementLogViewSet`
-    es coach-only y sin filtro "mío"; esta vista es de solo lectura y
-    exclusiva para que el propio miembro vea su historial.
-    """
+    """Historial de peso del propio miembro autenticado, para la gráfica
+    del dashboard (card "PESO ACTUAL / META"). Solo lectura."""
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
@@ -123,11 +110,8 @@ class MyWeightHistoryView(views.APIView):
 
 
 class MyTrackingSummaryView(views.APIView):
-    """
-    Resumen del miembro autenticado para las cards "CALORÍAS QUEMADAS
-    EN TOTAL" y "RACHA" del dashboard (antes ausentes, ver
-    docs/mockups/app/03_dashboard.jpeg).
-    """
+    """Resumen del miembro autenticado para las cards "CALORÍAS QUEMADAS
+    EN TOTAL" y "RACHA" del dashboard."""
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
@@ -139,18 +123,8 @@ class MyTrackingSummaryView(views.APIView):
 
 
 class StudyExportView(views.APIView):
-    """
-    Exportación CSV de VD1 (constancia al entrenamiento) y VD2
-    (constancia nutricional) para el período de implementación
-    octubre-noviembre 2026, replicando la pantalla 'Datos del estudio'
-    del panel admin (Exportador de Datos de Estudio).
-
-    Uso: GET /api/tracking/study-export/?start=2026-10-01&end=2026-11-30
-
-    Acepta JWT (consumo API normal) o sesión de Django (link directo
-    desde la pantalla "Datos del estudio" del panel, que autentica por
-    sesión en vez de JWT).
-    """
+    """Exportación CSV de VD1/VD2 por miembro, para la pantalla 'Datos
+    del estudio' del panel. Acepta JWT o sesión de Django."""
     permission_classes = [IsCoach]
     authentication_classes = [JWTAuthentication, SessionAuthentication]
 

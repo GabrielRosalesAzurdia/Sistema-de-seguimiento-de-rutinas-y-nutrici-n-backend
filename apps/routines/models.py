@@ -3,20 +3,7 @@ from apps.members.models import Gender
 
 
 class RoutineCategory(models.TextChoices):
-    """
-    Las 7 categorías de rutina confirmadas en reunión 2 (15/abr/2026):
-    Pierna-Cuádriceps, Pecho, Brazos y Espalda, Cardio, ABS,
-    Pierna-Glúteos y Hombro (agregada en esa misma reunión).
-
-    PIERNA_CUADRICEPS_CIRCUITO y PECHO_HOMBRO_TRICEPS se agregaron el
-    2026-09-23: son rutinas exclusivas del calendario de mujeres
-    (miércoles y jueves respectivamente) que no se pueden modelar
-    reasignando una categoría existente porque `Routine.category` es
-    único y esas categorías ya las comparten con los hombres en otros
-    días. El valor de choice de CARDIO se mantiene por compatibilidad
-    con datos existentes; solo cambia la etiqueta visible a "Workout"
-    (nombre con el que el coach lo pidió).
-    """
+    """* Las 9 categorías de rutina. CARDIO se muestra como "Workout". Las últimas 2 son exclusivas del calendario de mujeres."""
     PIERNA_CUADRICEPS = "PIERNA_CUADRICEPS", "Pierna - Cuádriceps"
     PECHO = "PECHO", "Pecho"
     BRAZOS_ESPALDA = "BRAZOS_ESPALDA", "Brazos y Espalda"
@@ -29,13 +16,7 @@ class RoutineCategory(models.TextChoices):
 
 
 class Exercise(models.Model):
-    """
-    Catálogo predefinido de ejercicios/máquinas del gimnasio, con
-    nomenclatura propia del gym (p. ej. 'Polea abierta'). Se mapea un
-    ícono/foto de referencia una sola vez para no requerir subir
-    imágenes repetidamente desde el panel (duda técnica planteada por
-    el coach en reunión 2, E2).
-    """
+    """Catálogo predefinido de ejercicios/máquinas del gimnasio, con ícono/foto de referencia propios."""
     name = models.CharField("Nombre", max_length=150, unique=True)
     category = models.CharField(max_length=30, choices=RoutineCategory.choices)
     icon = models.ImageField(upload_to="exercise_icons/", null=True, blank=True)
@@ -52,12 +33,7 @@ class Exercise(models.Model):
 
 
 class Routine(models.Model):
-    """
-    Rutina semanal por categoría (p. ej. 'Brazos y Espalda'). Las
-    rutinas en sí ya están creadas de antemano; lo que se actualiza
-    semanalmente son los ejercicios que la integran (RoutineExercise),
-    editado por el coach desde el panel de administración.
-    """
+    """Rutina por categoría; el coach solo actualiza los ejercicios que la integran (RoutineExercise), no la rutina en sí."""
     category = models.CharField(
         max_length=30, choices=RoutineCategory.choices, unique=True
     )
@@ -77,12 +53,7 @@ class Routine(models.Model):
 
 
 class RoutineExercise(models.Model):
-    """
-    Ejercicios que integran una rutina en la semana vigente, con su
-    orden de ejecución (la app solo muestra el orden, no permite
-    marcar completado por ejercicio individual; ver Cuestionario
-    Requerimientos, B5).
-    """
+    """Ejercicio que integra una rutina, con su orden de ejecución. La app solo muestra el orden, no marca completado por ejercicio."""
     routine = models.ForeignKey(Routine, on_delete=models.CASCADE, related_name="exercises")
     exercise = models.ForeignKey(Exercise, on_delete=models.PROTECT)
     order = models.PositiveSmallIntegerField(default=1)
@@ -108,17 +79,7 @@ class Weekday(models.IntegerChoices):
 
 
 class ScheduledRoutineDay(models.Model):
-    """
-    Calendario semanal de rutinas: qué categoría le toca a cada género
-    en cada día de la semana (decisión de negocio confirmada con el
-    desarrollador/coach, ver CLAUDE.md). Editable libremente por el
-    coach desde el panel admin (p. ej. reasignar un día a Cardio para
-    un género en particular).
-
-    Un día de la semana sin fila para un género = no hay rutina
-    asignada ese día para ese género (día de descanso), no es un
-    error — el enpoint `me/today/` lo maneja como "sin rutina hoy".
-    """
+    """Calendario semanal: categoría de rutina asignada a cada género por día. Sin fila = día de descanso, no un error."""
     day_of_week = models.PositiveSmallIntegerField("Día", choices=Weekday.choices)
     gender = models.CharField(max_length=10, choices=Gender.choices)
     category = models.CharField(max_length=30, choices=RoutineCategory.choices)

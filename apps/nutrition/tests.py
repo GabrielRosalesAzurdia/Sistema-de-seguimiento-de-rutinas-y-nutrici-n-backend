@@ -6,10 +6,7 @@ from .models import NutritionPlan
 
 
 class MyCurrentPlanViewTests(TestCase):
-    """
-    Regla de negocio crítica (CLAUDE.md): un plan pendiente de revisión
-    NUNCA debe llegar al miembro — solo planes con status=APPROVED.
-    """
+    """* Un plan pendiente de revisión nunca debe llegar al miembro — solo planes con status=APPROVED."""
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -39,8 +36,6 @@ class MyCurrentPlanViewTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_no_plan_at_all_returns_clean_404_not_500(self):
-        # Regresión: get_object() usaba .latest() sin capturar
-        # DoesNotExist y devolvía un 500 sin manejar.
         response = self.client.get("/api/nutrition/me/current-plan/")
         self.assertEqual(response.status_code, 404)
 

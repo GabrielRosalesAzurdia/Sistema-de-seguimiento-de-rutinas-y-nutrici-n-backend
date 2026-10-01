@@ -29,11 +29,7 @@ from .utils import add_one_month
 
 MealSuggestionFormSet = inlineformset_factory(
     NutritionPlan, MealSuggestion,
-    # "meal_time" no se incluye: identifica la comida (Desayuno, Almuerzo...)
-    # y nunca se edita — el template solo lo muestra de solo lectura. Si se
-    # incluye aquí, el formset lo exige como campo del POST y el template no
-    # lo renderiza, por lo que SIEMPRE falla con "Este campo es requerido"
-    # y bloquea Aprobar/Rechazar/Guardar sin importar los datos ya en BD.
+    # ! "meal_time" no se incluye: es de solo lectura en el template, incluirlo rompe el formset.
     fields=["carbs_g", "protein_g", "fats_g", "calories",
             "suggestion_1", "suggestion_2", "suggestion_3"],
     extra=0, can_delete=False,
@@ -53,9 +49,7 @@ class PanelLogoutView(LogoutView):
 
 
 class DashboardView(CoachRequiredMixin, TemplateView):
-    """Conteo de miembros activos y pagos pendientes, promedio de
-    constancia nutricional (VD2, vía compute_study_metrics) y
-    actividad reciente de los últimos 15 miembros actualizados."""
+    """Miembros activos, pagos pendientes, promedio de constancia nutricional y actividad reciente."""
 
     template_name = "panel/dashboard.html"
 
@@ -112,11 +106,7 @@ class MembersListView(CoachRequiredMixin, ListView):
 
 
 class MemberFormActionMixin:
-    """Botones compartidos por 'Agregar'/'Editar Miembro': Guardar /
-    Pagado — todos reenvían el mismo form, distinguidos por el nombre
-    del botón presionado. "Desactivar"/"Reactivar" viven en
-    MemberToggleActiveView, fuera de este form: no dependen de pasar
-    la validación completa de datos personales."""
+    """Botones Guardar/Pagado de 'Agregar'/'Editar Miembro', distinguidos por el nombre del botón presionado."""
 
     form_class = MemberPersonalDataForm
     template_name = "panel/member_form.html"
@@ -125,9 +115,7 @@ class MemberFormActionMixin:
     def form_valid(self, form):
         is_create = form.instance.pk is None
         if is_create and not form.instance.next_payment_date:
-            # Solo se autocalcula al crear — en ediciones posteriores
-            # next_payment_date/last_payment_date solo cambian al marcar
-            # "Pagado" (ver abajo), nunca por re-guardar datos personales.
+            # * Solo se autocalcula al crear; luego solo cambia al marcar "Pagado".
             form.instance.next_payment_date = add_one_month(form.instance.start_date)
 
         generated_password = None
@@ -176,10 +164,7 @@ class MemberUpdateView(MemberFormActionMixin, CoachRequiredMixin, UpdateView):
 
 
 class MemberToggleActiveView(CoachRequiredMixin, View):
-    """Desactiva o reactiva un miembro — vista dedicada, POST-only, que
-    no depende de MemberPersonalDataForm en absoluto. Desactiva tanto
-    Member.is_active (visibilidad/estado en el panel) como
-    User.is_active (bloquea el login en la app)."""
+    """Desactiva o reactiva un miembro: Member.is_active (panel) y User.is_active (bloquea login en la app)."""
 
     def post(self, request, pk, activate):
         member = get_object_or_404(Member, pk=pk)
@@ -193,12 +178,7 @@ class MemberToggleActiveView(CoachRequiredMixin, View):
 
 
 class MemberResetPasswordView(CoachRequiredMixin, View):
-    """Genera una nueva contraseña temporal para un miembro que olvidó
-    la suya — mismo patrón que la contraseña temporal generada al
-    crear el miembro (get_random_string + modal vía messages con
-    extra_tags="temp-password", ver base.html), y misma vista
-    independiente/POST-only que MemberToggleActiveView (no depende de
-    validar el formulario completo de datos personales)."""
+    """Genera una contraseña temporal nueva para un miembro que olvidó la suya."""
 
     def post(self, request, pk):
         member = get_object_or_404(Member, pk=pk)
@@ -212,10 +192,7 @@ class MemberResetPasswordView(CoachRequiredMixin, View):
 
 
 class MemberFitnessUpdateView(CoachRequiredMixin, UpdateView):
-    """"Actualización de datos fitness": peso + medidas corporales.
-    A diferencia de editar datos personales, cada guardado crea un
-    `BodyMeasurementLog` nuevo (historial para la gráfica de peso de
-    la app) además de actualizar el snapshot en `Member`."""
+    """Actualiza peso y medidas corporales; cada guardado crea un BodyMeasurementLog nuevo además del snapshot en Member."""
 
     model = Member
     form_class = MemberFitnessUpdateForm
@@ -237,9 +214,7 @@ class MemberFitnessUpdateView(CoachRequiredMixin, UpdateView):
             body_water_percentage=member.body_water_percentage,
         )
         messages.success(self.request, f"Datos fitness de {member.full_name} actualizados.")
-        # Dieta automática al primer peso registrado: el peso no existe
-        # todavía al crear el miembro (se ingresa aparte, aquí), así que
-        # este es el punto real donde ya se puede calcular la heurística.
+        # * Dieta automática al primer peso registrado del miembro.
         if is_first_weight:
             try:
                 generate_plan_for_member(member)
@@ -254,12 +229,7 @@ class MemberFitnessUpdateView(CoachRequiredMixin, UpdateView):
 
 
 class RoutinesListView(CoachRequiredMixin, TemplateView):
-    """
-    Pantalla 'Rutinas': sidebar con las 7 categorías, ejercicios
-    vigentes de la categoría seleccionada a la derecha, y la grilla
-    del calendario semanal por género (qué categoría de rutina
-    corresponde a cada día y género).
-    """
+    """Pantalla 'Rutinas': categorías, ejercicios vigentes de la seleccionada y el calendario semanal por género."""
 
     template_name = "panel/routines_list.html"
 
@@ -284,9 +254,7 @@ class RoutinesListView(CoachRequiredMixin, TemplateView):
 
 
 class RoutineEditExercisesView(CoachRequiredMixin, View):
-    """Selección múltiple del catálogo de ejercicios de una categoría
-    (toggle); el orden de los ejercicios se asigna según el orden de
-    selección, sin reordenamiento manual."""
+    """Selección múltiple del catálogo de ejercicios de una categoría; el orden sigue el orden de selección."""
 
     def get(self, request, category):
         routine = get_object_or_404(Routine, category=category)
@@ -329,11 +297,7 @@ class NutritionReviewView(CoachRequiredMixin, TemplateView):
     template_name = "panel/nutrition_review.html"
 
     def _expire_stale_plans(self):
-        """Chequeo lazy de vigencia mensual (no hay cron en el proyecto):
-        cada vez que el coach abre esta pantalla, cualquier plan
-        aprobado con más de 30 días desde su revisión, y que no tenga
-        ya un sucesor pendiente, dispara la generación automática de
-        un reemplazo."""
+        """Chequeo lazy (sin cron): regenera cualquier plan aprobado con más de 30 días desde su revisión."""
         cutoff = timezone.now() - timedelta(days=30)
         members_with_pending = NutritionPlan.objects.filter(
             status="PENDING_REVIEW"
@@ -360,9 +324,7 @@ class NutritionReviewView(CoachRequiredMixin, TemplateView):
 
 
 class GenerateNutritionPlanView(CoachRequiredMixin, View):
-    """Botón 'Generar nueva dieta' por miembro (pantalla Editar
-    Miembro) — dispara la heurística manualmente, sin esperar al
-    primer registro de peso o al vencimiento mensual."""
+    """Botón 'Generar nueva dieta': dispara la heurística manualmente, sin esperar al peso o al vencimiento mensual."""
 
     def post(self, request, pk):
         member = get_object_or_404(Member, pk=pk)
@@ -390,9 +352,7 @@ class GenerateNutritionPlanView(CoachRequiredMixin, View):
 
 
 class NutritionPlanDetailView(CoachRequiredMixin, View):
-    """Detalle de un plan nutricional (pendiente o aprobado): muestra
-    y permite editar las 5 comidas (macros + sugerencias de platillos)
-    antes de aprobar/rechazar."""
+    """Detalle de un plan: muestra y permite editar las 5 comidas antes de aprobar/rechazar."""
 
     template_name = "panel/nutrition_plan_detail.html"
 
@@ -417,8 +377,6 @@ class NutritionPlanDetailView(CoachRequiredMixin, View):
     def post(self, request, pk):
         plan = get_object_or_404(NutritionPlan.objects.select_related("member"), pk=pk)
         if plan.status in ("SUPERSEDED", "REJECTED"):
-            # Plan cerrado/reemplazado (SUPERSEDED o REJECTED): de solo
-            # lectura, no admite nuevas acciones.
             messages.error(request, "Este plan ya no está activo y es de solo lectura.")
             return redirect("panel:nutrition-plan-detail", pk=plan.pk)
         action = request.POST.get("action")
@@ -470,12 +428,7 @@ class NutritionPlanDetailView(CoachRequiredMixin, View):
 
 
 class StudyDataView(CoachRequiredMixin, TemplateView):
-    """
-    Rango de fechas, promedios VD1/VD2 y tablas de detalle por
-    miembro. El botón "Exportar a CSV" enlaza al endpoint
-    GET /api/tracking/study-export/, que acepta tanto sesión de
-    Django como JWT.
-    """
+    """Rango de fechas, promedios VD1/VD2 y tablas de detalle por miembro, con export a CSV."""
 
     template_name = "panel/study_export.html"
 
@@ -489,8 +442,6 @@ class StudyDataView(CoachRequiredMixin, TemplateView):
         try:
             parse_study_range(start or None, end or None)
         except InvalidStudyRange as exc:
-            # Rango inválido: se avisa en la pantalla en vez de mostrar
-            # una tabla vacía que parece "sin actividad".
             context["range_error"] = str(exc)
             context["metrics"] = []
             context["avg_vd1"] = 0

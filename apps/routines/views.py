@@ -28,15 +28,7 @@ class RoutineExerciseViewSet(viewsets.ModelViewSet):
 
 
 class TodayRoutineView(views.APIView):
-    """
-    Resuelve la rutina de hoy del miembro autenticado según el
-    calendario semanal por género (ScheduledRoutineDay). Alimenta la
-    tarjeta "RUTINA DE HOY" del dashboard (antes hardcodeada).
-
-    Devuelve 204 sin cuerpo si el miembro no tiene género asignado
-    todavía, o si hoy es un día sin rutina programada para su género
-    (descanso) — ambos son estados válidos, no errores.
-    """
+    """Rutina de hoy del miembro según el calendario semanal por género. Devuelve 204 si no hay género asignado o es día de descanso."""
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):

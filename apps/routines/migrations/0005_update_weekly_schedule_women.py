@@ -1,21 +1,13 @@
 from django.db import migrations
 
-# Corrige, en el calendario ya sembrado por 0003_seed_weekly_schedule, las
-# dos filas de mujeres que ahora usan las categorías exclusivas agregadas en
-# 0004_add_new_routine_categories (2026-09-23): miércoles pasa de
-# PIERNA_CUADRICEPS a PIERNA_CUADRICEPS_CIRCUITO, y jueves de PECHO a
-# PECHO_HOMBRO_TRICEPS. No se edita 0003 (ya aplicada en Neon) — esto es una
-# migración de datos nueva, idempotente: usa update_or_create, así que si la
-# fila ya tiene la categoría correcta (como ya ocurre en Neon, actualizado a
-# mano fuera del repo) no cambia nada.
+# Cambia el calendario de mujeres a las categorías exclusivas de miércoles/jueves. Idempotente (update_or_create).
 UPDATED_ROWS = [
     # (day_of_week, gender, category)
     (2, "MUJER", "PIERNA_CUADRICEPS_CIRCUITO"),  # Miércoles
     (3, "MUJER", "PECHO_HOMBRO_TRICEPS"),        # Jueves
 ]
 
-# Valores que 0003 dejó originalmente en esas mismas filas, para poder
-# revertir la migración de forma simétrica.
+# Valores previos de esas filas, para poder revertir la migración.
 PREVIOUS_ROWS = [
     (2, "MUJER", "PIERNA_CUADRICEPS"),
     (3, "MUJER", "PECHO"),

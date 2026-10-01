@@ -5,17 +5,7 @@ from django.utils import timezone
 
 
 class User(AbstractUser):
-    """
-    Usuario de autenticación único para todo el sistema.
-
-    - is_staff=True  -> coach / dueño del gimnasio, accede al panel Django
-      admin y a los endpoints administrativos del API (Django REST
-      Framework).
-    - is_staff=False -> miembro del gimnasio, solo accede a la app móvil
-      Flutter a través de su Member vinculado (ver Member.user).
-
-    Se usa email como identificador de login en ambos casos.
-    """
+    """Usuario único de autenticación: is_staff=True es el coach (panel), is_staff=False es el miembro (app). Login por email."""
     email = models.EmailField(unique=True)
     must_change_password = models.BooleanField(
         "Debe cambiar su contraseña", default=False,
@@ -35,10 +25,7 @@ class User(AbstractUser):
 
 
 class FitnessGoal(models.TextChoices):
-    """
-    Meta fitness del usuario. 'Tonificar' se trata internamente como
-    'Perder peso' según decisión de reunión 2 (15/abr/2026).
-    """
+    # * TONIFICAR se trata igual que PERDER_PESO en cálculo de macros/predicción, solo se muestra distinto en la UI.
     GANAR_PESO = "GANAR_PESO", "Ganar peso"
     PERDER_PESO = "PERDER_PESO", "Perder peso"
     MANTENER_PESO = "MANTENER_PESO", "Mantener peso"
@@ -53,32 +40,16 @@ class ActivityLevel(models.TextChoices):
 
 
 class Gender(models.TextChoices):
-    """
-    Alcance limitado a lo que requiere el calendario semanal de
-    rutinas (cada día de la semana asigna una categoría distinta
-    según género, ver ScheduledRoutineDay en apps.routines) y la
-    fórmula U.S. Navy de % de grasa corporal, que usa una variante de
-    cálculo distinta por género.
-    """
+    """Determina la categoría del calendario semanal de rutinas y la variante de la fórmula U.S. Navy de % de grasa."""
     HOMBRE = "HOMBRE", "Hombre"
     MUJER = "MUJER", "Mujer"
 
 
 class Member(models.Model):
-    """
-    Usuario del gimnasio (miembro). Datos personales completos son
-    visibles solo en el panel de administración; la app móvil solo
-    expone al usuario su propio perfil sin correo/teléfono editables
-    y SIN campo de peso editable (el peso lo ingresa únicamente el
-    coach, ver decisión de reunión: "el peso será ingresado solo por
-    el coach no por los usuarios para evitar datos erróneos").
-    """
+    """Miembro del gimnasio. Datos personales completos solo en el panel; la app expone un perfil reducido sin correo/teléfono/peso editables."""
+    # * El peso/medidas los ingresa únicamente el coach desde el panel; la app nunca expone esos campos como editables.
 
-    # --- Cuenta / autenticación de la app ---
-    # Todo miembro tiene sí o sí una cuenta de login (el panel la crea
-    # junto con el miembro, con contraseña autogenerada) — el correo
-    # vive únicamente en `user.email`, no hay un `Member.email`
-    # separado que pueda divergir (ver `email` property abajo).
+    # Todo miembro tiene cuenta de login creada junto con él (contraseña autogenerada); el correo vive en `user.email` (ver property `email`).
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -169,11 +140,7 @@ class Member(models.Model):
     is_paid = models.BooleanField("Pagado", default=False)
     is_active = models.BooleanField("Activo", default=True)
 
-    # --- Metas individuales de constancia (VD1/VD2 de la tesis) ---
-    # El coach las define al registrar al miembro: cuántos días planea
-    # entrenar / seguir la dieta durante su participación en el
-    # sistema. Son el denominador real de "% constancia" (si el
-    # miembro rebasa su meta, el % puede superar 100% — no se limita).
+    # * Metas de constancia (VD1/VD2) definidas por el coach; si el miembro las supera, el % puede pasar de 100%, no se limita.
     planned_training_days = models.PositiveSmallIntegerField(
         "Días planificados de rutina",
         help_text="Total de sesiones de entrenamiento que el coach planifica "
@@ -209,10 +176,7 @@ class Member(models.Model):
     def save(self, *args, **kwargs):
         from .services import calculate_body_composition
 
-        # Solo se sobreescribe si hay suficientes medidas para calcular
-        # (cintura/cuello/altura, +cadera en mujeres) — si faltan
-        # (p. ej. neck_cm todavía no medido), se preserva el valor que
-        # ya estuviera guardado en vez de borrarlo con None.
+        # Solo sobreescribe si hay medidas suficientes para calcular; si faltan, conserva el valor ya guardado.
         body_fat, body_water = calculate_body_composition(self)
         if body_fat is not None:
             self.body_fat_percentage = body_fat
@@ -233,12 +197,7 @@ class Member(models.Model):
 
     @property
     def payment_status_display(self):
-        """Fecha de próximo pago ya formateada (YYYY-MM-DD) para mostrar
-        en el panel, o el string "PENDIENTE DE PAGO" si el miembro nunca
-        ha pagado o si la fecha de próximo pago ya llegó/pasó — evita
-        mostrar una fecha vencida o confusa como "1/0" (feedback de la
-        prueba E2E). Devuelve siempre un string (no un date) para poder
-        renderizarse directo en templates sin el filtro |date."""
+        """Próximo pago formateado (YYYY-MM-DD), o "PENDIENTE DE PAGO" si nunca pagó o la fecha ya llegó/pasó. Siempre devuelve string."""
         today = timezone.localdate()
         if (
             self.last_payment_date is None

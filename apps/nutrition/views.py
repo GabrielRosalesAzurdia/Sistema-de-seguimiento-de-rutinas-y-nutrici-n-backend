@@ -22,10 +22,7 @@ class MyCurrentPlanView(generics.RetrieveAPIView):
                 member=member, is_current=True, status="APPROVED"
             ).latest("created_at")
         except NutritionPlan.DoesNotExist:
-            # Antes esto se propagaba como 500 sin manejar. El mockup y
-            # el mobile (NutritionService.getMyCurrentPlan) ya esperan
-            # "sin plan todavía" como un estado normal (plan pendiente
-            # de aprobación), no un error de servidor.
+            # "Sin plan todavía" es un estado normal, no un error de servidor.
             raise Http404("El miembro no tiene un plan nutricional aprobado todavía.")
 
 
@@ -38,8 +35,7 @@ class NutritionPlanAdminViewSet(viewsets.ModelViewSet):
 
 
 class ReviewNutritionPlanView(generics.UpdateAPIView):
-    """Aprobar o rechazar un plan pendiente (requisito: el coach debe
-    aprobar todo plan antes de que llegue al usuario)."""
+    """* Aprobar o rechazar un plan pendiente — el coach debe aprobar todo plan antes de que llegue al usuario."""
 
     queryset = NutritionPlan.objects.all()
     serializer_class = NutritionPlanReviewSerializer

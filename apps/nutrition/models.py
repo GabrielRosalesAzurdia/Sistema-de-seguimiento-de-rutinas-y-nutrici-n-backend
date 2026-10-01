@@ -3,10 +3,7 @@ from apps.members.models import Member
 
 
 class MealTime(models.TextChoices):
-    """
-    5 tiempos de comida (D3, reunión 2: se agregó una 'Refacción de la
-    tarde' a los 4 tiempos originales).
-    """
+    """Los 5 tiempos de comida del plan nutricional, en orden de consumo."""
     DESAYUNO = "DESAYUNO", "Desayuno"
     REFACCION_I = "REFACCION_I", "Refacción I"
     ALMUERZO = "ALMUERZO", "Almuerzo"
@@ -15,13 +12,7 @@ class MealTime(models.TextChoices):
 
 
 class NutritionPlanStatus(models.TextChoices):
-    """
-    Todo plan, se haya generado automáticamente (heurística
-    determinística de Mifflin-St Jeor, ver apps/nutrition/services.py)
-    o creado a mano, debe ser revisado y aprobado por el coach antes de
-    llegar al usuario (ver panel admin, pantalla 'Nutrición': Dietas
-    por Revisar / Dietas Aprobadas y en Seguimiento).
-    """
+    """* Todo plan debe ser revisado y aprobado por el coach antes de llegar al usuario."""
     PENDING_REVIEW = "PENDING_REVIEW", "Pendiente de revisión"
     APPROVED = "APPROVED", "Aprobada y en seguimiento"
     REJECTED = "REJECTED", "Rechazada"
@@ -29,11 +20,7 @@ class NutritionPlanStatus(models.TextChoices):
 
 
 class NutritionPlan(models.Model):
-    """
-    Plan nutricional diario de un miembro: solo macros (grasas,
-    carbohidratos, proteínas) y calorías totales; la app "solo maneja
-    macros", sin alimentos típicos locales (E3, reunión 2: No aplica).
-    """
+    """Plan nutricional diario de un miembro: solo macros y calorías totales, sin alimentos específicos."""
     member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="nutrition_plans")
     status = models.CharField(
         max_length=20, choices=NutritionPlanStatus.choices,
@@ -44,10 +31,7 @@ class NutritionPlan(models.Model):
     carbs_g = models.PositiveSmallIntegerField()
     fats_g = models.PositiveSmallIntegerField()
 
-    # Trazabilidad de cómo se generó el plan. Hoy no interviene ningún
-    # modelo entrenado: los planes automáticos los calcula la heurística
-    # determinística de apps/nutrition/services.py. El nombre del campo
-    # se conserva por compatibilidad con la app ya publicada.
+    # True si el plan lo generó automáticamente apps/nutrition/services.py; False si lo creó el coach a mano.
     generated_by_ml = models.BooleanField(
         default=False,
         help_text="True si el plan se generó automáticamente por cálculo "
@@ -56,17 +40,13 @@ class NutritionPlan(models.Model):
         "mano. No implica que intervenga un modelo de aprendizaje "
         "automático — hoy no lo hay para nutrición.",
     )
-    # Enlace opcional a la predicción de MLPrediction que originó el plan.
-    # Reservado para cuando exista un modelo real de nutrición; en el
-    # código actual nunca se asigna.
+    # Predicción de MLPrediction que originó el plan, si aplica.
     ml_prediction = models.ForeignKey(
         "ml_predictions.MLPrediction", null=True, blank=True,
         on_delete=models.SET_NULL, related_name="nutrition_plans",
     )
 
-    # Snapshot de lo que la heurística/ML sugirió originalmente, previo a
-    # cualquier edición del coach — permite comparar sugerido vs. aprobado
-    # como insumo de reentrenamiento futuro (no hay reentrenamiento en vivo).
+    # Snapshot de lo sugerido originalmente, antes de cualquier edición del coach.
     ml_suggested_calories = models.PositiveSmallIntegerField(null=True, blank=True)
     ml_suggested_protein_g = models.PositiveSmallIntegerField(null=True, blank=True)
     ml_suggested_carbs_g = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -78,8 +58,7 @@ class NutritionPlan(models.Model):
     )
     is_current = models.BooleanField(
         default=False,
-        help_text="Solo un plan 'actual' por miembro a la vez — se activa "
-                   "al aprobar (ver NutritionPlanDetailView).",
+        help_text="Solo un plan 'actual' por miembro a la vez — se activa al aprobar.",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -94,10 +73,7 @@ class NutritionPlan(models.Model):
         return f"Plan de {self.member} ({self.get_status_display()})"
 
     def recompute_totals_from_meals(self):
-        """Resincroniza los totales del plan a partir de sus 5 comidas —
-        se llama tras guardar el formset de revisión, para que una
-        edición de macros por comida se refleje en el total del plan.
-        No hace save(); el caller decide cuándo persistir."""
+        """Resuma las 5 comidas en los totales del plan. No hace save(); el caller decide cuándo persistir."""
         totals = self.meals.aggregate(
             calories=models.Sum("calories"),
             protein_g=models.Sum("protein_g"),
@@ -126,10 +102,7 @@ class MealSuggestion(models.Model):
     class Meta:
         verbose_name = "Sugerencia de comida"
         verbose_name_plural = "Sugerencias de comida"
-        # Orden de consumo (Desayuno, Refacción I, Almuerzo, Refacción
-        # II, Cena), no orden alfabético del valor guardado — "meal_time"
-        # a secas ordenaba ALMUERZO/CENA/DESAYUNO/... (bug reportado en
-        # la prueba E2E).
+        # * Ordena por orden de consumo, no alfabético del valor guardado.
         ordering = [
             "plan",
             models.Case(

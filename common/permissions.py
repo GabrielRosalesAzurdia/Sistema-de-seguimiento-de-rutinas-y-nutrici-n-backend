@@ -1,8 +1,4 @@
-"""
-Clases de permisos DRF compartidas entre apps. Antes duplicadas
-verbatim en apps/members, apps/nutrition, apps/routines y
-apps/tracking (ver docs/backend_arquitectura.md sección 7).
-"""
+"""Clases de permisos DRF compartidas por apps/members, apps/nutrition, apps/routines y apps/tracking."""
 from rest_framework import permissions
 
 

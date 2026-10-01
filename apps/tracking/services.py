@@ -1,23 +1,10 @@
-"""
-Cálculo de VD1 (constancia al entrenamiento) y VD2 (constancia
-nutricional) por miembro que participa en el estudio, más sus
-indicadores secundarios (matriz operacional del Anteproyecto).
-Compartido entre el endpoint de exportación CSV
-(apps.tracking.views.StudyExportView) y la pantalla del panel "Datos
-del estudio" (apps.panel.views), para no duplicar la lógica en dos
-lugares.
+"""Cálculo de VD1 (constancia al entrenamiento) y VD2 (constancia
+nutricional) por miembro del estudio, más sus indicadores secundarios.
+Compartido entre `StudyExportView` y la pantalla "Datos del estudio" del panel.
 
-Definición operacional cerrada (ver CLAUDE.md sección 1 y 8):
-- VD1: "sesiones planificadas" es la meta individual que el coach
-  define por miembro al registrarlo (`Member.planned_training_days`),
-  no un valor calculado del calendario semanal. Si el miembro completa
-  más de lo planificado, el % puede superar 100% (decisión de negocio:
-  se considera una meta superada, no un error de datos).
-- VD2: el denominador es "días activos en el sistema" del miembro
-  dentro del rango solicitado (ver `member_active_window`) — corrección de
-  la ronda de feedback v4, ya no usa la meta individual
-  `planned_nutrition_days` (ese campo sigue existiendo en el modelo,
-  pero ahora solo alimenta otras pantallas del panel, no VD2).
+VD1: % sobre `Member.planned_training_days` (puede superar 100%).
+VD2: % sobre "días activos en el sistema" (`member_active_window`),
+no sobre `planned_nutrition_days`.
 """
 import math
 from datetime import date, datetime, timedelta
@@ -41,16 +28,9 @@ class InvalidStudyRange(ValueError):
 
 
 def parse_study_range(start, end):
-    """
-    Parsea y valida el par (start, end) de un reporte del estudio.
-
-    Devuelve (range_start, range_end) como `date` o `None`. Lanza
-    `InvalidStudyRange` cuando ambas fechas están presentes y el inicio
-    es posterior al fin — antes ese caso hacía que `compute_study_metrics`
-    devolviera un reporte vacío indistinguible de "sin actividad real".
-    No cambia el cálculo de VD1/VD2: solo valida la entrada antes de
-    llamarlo.
-    """
+    """Parsea y valida (start, end) de un reporte del estudio. Devuelve
+    (range_start, range_end) como `date` o `None`; lanza `InvalidStudyRange`
+    si el inicio es posterior al fin."""
     range_start = _parse(start)
     range_end = _parse(end)
     if range_start and range_end and range_start > range_end:
@@ -61,32 +41,12 @@ def parse_study_range(start, end):
 
 
 def member_active_window(member, range_start, range_end):
-    """
-    Devuelve (comp_start, cutoff) para un miembro dado un rango
-    start/end ya parseado a date (o None).
-
-    Función pública compartida: además de VD2 y los indicadores
-    secundarios de este módulo, la usa
-    apps.ml_predictions.services.compute_recent_adherence para que la
-    constancia que alimenta la predicción se calcule con la misma
-    definición de "días activos en el sistema".
-
-    activation_date = max(start_date, created_at): un miembro no pudo
-    tener registros antes de que su cuenta existiera en el sistema,
-    aunque `start_date` (fecha de ingreso al gym) sea retroactiva.
-
-    comp_start acota la activation_date al inicio del rango
-    solicitado (si hay uno) — usa la MISMA fórmula sin importar si se
-    llama para VD2 o para los indicadores secundarios, para que ambos
-    describan la misma ventana real de actividad del miembro. cutoff
-    acota el fin del rango a hoy (si no hay fin, o el fin es futuro).
-    """
-    # `Member.start_date` es un DateField, pero su default (`timezone.now`)
-    # devuelve un datetime; en una instancia recién creada en memoria
-    # (sin ida y vuelta a la BD) el atributo puede ser datetime en vez de
-    # date. Se normaliza a date antes de comparar — no cambia el valor
-    # para ninguna fila ya persistida (ahí ya es date), solo evita el
-    # TypeError al mezclar date y datetime.
+    """Devuelve (comp_start, cutoff): la ventana real de actividad del
+    miembro dentro del rango start/end pedido. `activation_date` es
+    max(start_date, created_at); `cutoff` no pasa de hoy. Compartida con
+    `apps.ml_predictions.services.compute_recent_adherence`."""
+    # Normaliza a date: en una instancia recién creada en memoria
+    # start_date puede llegar como datetime en vez de date.
     start_date = member.start_date
     if isinstance(start_date, datetime):
         start_date = start_date.date()
@@ -100,15 +60,10 @@ def member_active_window(member, range_start, range_end):
 
 
 def count_distinct_workout_days(queryset):
-    """
-    Días distintos con al menos una WorkoutSessionLog, no el total de
-    filas. `Workout`/`ABS` (catálogo) no tienen día asignado en el
-    calendario semanal, así que un miembro puede registrar la rutina del
-    día y una de esas el mismo día — sin este dedup, ese día contaba como
-    2 sesiones para VD1/frecuencia semanal/constancia reciente en vez de
-    1. Función pública: también la usa
-    apps.ml_predictions.services.compute_recent_adherence.
-    """
+    """Días distintos con al menos una sesión, no el total de filas:
+    varias rutinas el mismo día cuentan una sola vez para VD1/constancia.
+    También la usa `apps.ml_predictions.services.compute_recent_adherence`."""
+    # * El dedup por día es la regla, no un detalle de implementación.
     return queryset.dates("completed_at", "day").count()
 
 
@@ -133,13 +88,8 @@ def _half_split(comp_start, cutoff, range_days):
 
 
 def _compute_secondary_indicators(member, comp_start, cutoff, planned):
-    """
-    6 indicadores secundarios de la matriz operacional (VD1 a/b/c,
-    VD2 a/b/c), calculados sobre la misma ventana [comp_start, cutoff]
-    que ya delimita "días activos" de VD2 — así que un miembro que se
-    unió a mitad del rango solicitado ve sus semanas/mitades contadas
-    desde su propia fecha de activación, no desde el inicio del rango.
-    """
+    """6 indicadores secundarios de la matriz operacional (VD1 a/b/c,
+    VD2 a/b/c), calculados sobre la ventana [comp_start, cutoff] del miembro."""
     range_days = (cutoff - comp_start).days + 1
     if range_days < 1:
         return {
@@ -198,22 +148,14 @@ def _compute_secondary_indicators(member, comp_start, cutoff, planned):
 
 
 def compute_study_metrics(start=None, end=None):
-    """
-    Devuelve una lista de dicts, uno por miembro con
-    `participates_in_study=True`, con VD1, VD2 y sus indicadores
-    secundarios para el rango de fechas dado (o desde la activación de
-    cada miembro hasta hoy si start/end son None).
-
-    Los miembros desactivados (`is_active=False`) se excluyen por
-    completo, incluyendo los datos que hayan generado mientras
-    estuvieron activos — no hay campo de fecha de baja para recortar
-    solo el período activo, así que se excluyen del todo (feedback de
-    la prueba E2E v3).
-    """
+    """Lista de dicts, uno por miembro con `participates_in_study=True`,
+    con VD1, VD2 y sus indicadores secundarios para el rango dado (o desde
+    la activación de cada miembro hasta hoy si start/end son None)."""
     range_start = _parse(start)
     range_end = _parse(end)
 
     results = []
+    # * Los miembros desactivados (is_active=False) se excluyen por completo.
     for member in Member.objects.filter(participates_in_study=True, is_active=True):
         workouts = member.workout_logs.all()
         nutrition_logs = member.nutrition_logs.all()
@@ -258,15 +200,9 @@ def compute_total_calories_burned(member) -> int:
 
 
 def compute_workout_streak(member) -> int:
-    """
-    Racha = días consecutivos con al menos una `WorkoutSessionLog`
-    completada (decisión de negocio: constancia de entrenamiento, no
-    de nutrición).
-
-    Si hoy todavía no hay registro, la racha se cuenta desde ayer (no
-    se rompe solo porque el día actual no ha terminado) — mismo
-    criterio que usan apps de hábitos tipo Duolingo.
-    """
+    """Racha = días consecutivos con al menos una sesión completada. Si
+    hoy aún no hay registro, cuenta desde ayer (no se rompe por un día
+    todavía en curso)."""
     dates_with_workout = set(
         member.workout_logs.values_list("completed_at__date", flat=True)
     )

@@ -20,9 +20,7 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs)
-        # Evita un round-trip extra a /me/ para saber si la app debe
-        # forzar la pantalla de "Crear tu contraseña" tras el login
-        # (contraseña temporal generada al dar de alta al miembro).
+        # Le dice a la app si debe forzar "Crear tu contraseña" antes del Dashboard.
         data["must_change_password"] = self.user.must_change_password
         return data
 
@@ -32,10 +30,7 @@ class EmailTokenObtainPairView(TokenObtainPairView):
 
 
 class ChangePasswordView(APIView):
-    """Cambia la contraseña del usuario autenticado (coach o miembro) y
-    limpia el flag must_change_password — usado tanto por el flujo
-    obligatorio de primer login (contraseña temporal) como por la
-    opción normal 'Cambiar contraseña' desde Perfil."""
+    """Cambia la contraseña del usuario autenticado y limpia must_change_password."""
 
     permission_classes = [permissions.IsAuthenticated]
 
@@ -50,21 +45,14 @@ class ChangePasswordView(APIView):
 
 
 class MemberAdminViewSet(viewsets.ModelViewSet):
-    """
-    CRUD completo de miembros para el panel de administración.
-    Usado por las pantallas 'Miembros' / 'Agregar Miembro' del mockup
-    del panel web (peso, medidas, meta, fecha de inicio/pago, etc.)
-    """
+    """CRUD completo de miembros para el panel de administración."""
     queryset = Member.objects.all()
     serializer_class = MemberAdminSerializer
     permission_classes = [IsCoach]
 
 
 class MyProfileView(generics.RetrieveUpdateAPIView):
-    """
-    Pantalla 'Perfil' / 'Editar Perfil' de la app: el miembro solo ve y
-    edita su propio perfil, sin poder tocar peso ni medidas corporales.
-    """
+    """El miembro solo ve y edita su propio perfil; no puede tocar peso ni medidas corporales."""
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):

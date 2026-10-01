@@ -26,9 +26,7 @@ SEED = {
 
 
 class LoadRoutineSeedTests(TestCase):
-    """Comando `load_routine_seed`: reemplaza el catálogo por lo que trae el
-    JSON — borra lo que sobra, arma las rutinas ya seleccionadas en el orden
-    del coach, y nunca borra un Exercise con historial real (PROTECT)."""
+    """Comando `load_routine_seed`: sincroniza el catálogo con el JSON y nunca borra un Exercise con historial real (PROTECT)."""
 
     def setUp(self):
         self.seed_file = Path(tempfile.mkstemp(suffix=".json")[1])

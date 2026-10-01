@@ -1,19 +1,11 @@
 """
-Alta masiva de participantes reales del estudio.
-
-No existe un endpoint de API que cree un `User` (cuenta de login) con
-contraseña propia — esa lógica vive solo en la vista HTML del panel
-(`apps.panel.views.MemberFormActionMixin`, sesión + CSRF). Este comando
-replica la misma lógica vía ORM y corre localmente contra la base que
-tenga activo el shell (local/Docker o Neon, ver CLAUDE.md sección 11
-para apuntar a Neon con variables DB_*) — no hace peticiones HTTP.
+Alta masiva de participantes reales del estudio: crea User/Member/mediciones vía ORM, sin pasar por el API.
 
 Uso:
     python manage.py alta_participantes ruta/participantes.json
     python manage.py alta_participantes ruta/participantes.json --ejecutar
 
-Por defecto corre en dry-run (no escribe nada, solo reporta lo que
-haría). Con --ejecutar sí crea usuarios/miembros/mediciones reales.
+Por defecto corre en dry-run (no escribe nada, solo reporta). Con --ejecutar sí crea los registros.
 """
 import csv
 import json
@@ -30,19 +22,13 @@ from apps.nutrition.services import IncompleteProfileError, generate_plan_for_me
 from apps.panel.utils import add_one_month
 from apps.tracking.models import BodyMeasurementLog
 
-# Fallback cuando el registro no trae dias_comidas (algunos sí lo
-# traen, otros no) — decisión del coach: dejarlo fijo en 3 en ese caso.
+# Fallback cuando el registro no trae dias_comidas.
 DEFAULT_PLANNED_NUTRITION_DAYS = 3
 
-# dias_entreno y dias_comidas pueden venir como ritmo semanal (<=7) o
-# ya como total mensual (>7) — decisión del coach: si es semanal,
-# multiplicar para cubrir un mes (~4 semanas); si ya es mensual, usarlo
-# tal cual.
+# * dias_entreno/dias_comidas: si viene como ritmo semanal (<=7) se multiplica a mensual; si ya es mensual (>7), se usa tal cual.
 WEEKS_PER_MONTH = 4
 
-# Las 10 circunferencias del JSON no incluyen cuello (neck_cm) — sin
-# eso, %grasa/%agua quedan en None hasta que el coach mida el cuello
-# (Member.save() ya maneja ese caso, no hace falta lógica extra acá).
+# El JSON no trae cuello (neck_cm); sin eso, %grasa/%agua quedan en None hasta que el coach lo mida.
 MEASUREMENT_FIELD_MAP = {
     "brazo_izq": "left_arm_cm",
     "brazo_der": "right_arm_cm",
@@ -77,20 +63,14 @@ GOAL_MAP = {
     "GANAR_PESO": FitnessGoal.GANAR_PESO,
     "AUMENTAR_PESO": FitnessGoal.GANAR_PESO,
     "SUBIR_DE_PESO": FitnessGoal.GANAR_PESO,
-    # "Ganar masa muscular" no tiene opción propia en el modelo — se
-    # acerca más a Ganar peso (calóricamente) que a Mantener (decisión
-    # confirmada con el coach).
-    "GANAR_MASA_MUSCULAR": FitnessGoal.GANAR_PESO,
+    "GANAR_MASA_MUSCULAR": FitnessGoal.GANAR_PESO,  # sin opción propia en el modelo
     "PERDER_PESO": FitnessGoal.PERDER_PESO,
     "BAJAR_DE_PESO": FitnessGoal.PERDER_PESO,
     "ADELGAZAR": FitnessGoal.PERDER_PESO,
     "MANTENER_PESO": FitnessGoal.MANTENER_PESO,
     "MANTENIMIENTO": FitnessGoal.MANTENER_PESO,
     "TONIFICAR": FitnessGoal.TONIFICAR,
-    # "Perder peso y ganar masa muscular" (recomposición corporal) se
-    # trata como Tonificar — que ya recibe el mismo tratamiento que
-    # Perder peso en el cálculo de macros (decisión confirmada con el coach).
-    "PERDER_PESO_Y_GANAR_MASA_MUSCULAR": FitnessGoal.TONIFICAR,
+    "PERDER_PESO_Y_GANAR_MASA_MUSCULAR": FitnessGoal.TONIFICAR,  # recomposición corporal
 }
 
 ACTIVITY_MAP = {
@@ -102,8 +82,7 @@ ACTIVITY_MAP = {
 
 
 class RecordError(Exception):
-    """Datos insuficientes o inválidos para procesar el registro — se
-    reporta y se sigue con el siguiente participante."""
+    """Datos insuficientes o inválidos para procesar un registro del JSON."""
 
 
 def _decimal(value):
@@ -116,18 +95,14 @@ def _decimal(value):
 
 
 def _scale_weekly_to_month(value):
-    """dias_entreno/dias_comidas pueden venir como ritmo semanal (<=7)
-    o ya como total mensual (>7) — si es semanal, se multiplica para
-    cubrir un mes (~4 semanas); si ya es mensual, se usa tal cual.
-    Devuelve (valor_mensual: int, fue_escalado: bool)."""
+    """Escala un ritmo semanal (<=7) a mensual; valores >7 se usan tal cual. Devuelve (valor_mensual, fue_escalado)."""
     if value <= 7:
         return int(round(value * WEEKS_PER_MONTH)), True
     return int(round(value)), False
 
 
 def build_plan(record):
-    """Calcula, sin tocar la base, todo lo que se crearía para un
-    participante. Devuelve (payload: dict, warnings: list[str])."""
+    """Calcula, sin tocar la base, todo lo que se crearía para un participante. Devuelve (payload, warnings)."""
 
     warnings = []
 
@@ -266,10 +241,7 @@ def build_plan(record):
 
 
 def apply_plan(payload):
-    """Ejecuta el plan calculado por build_plan(): crea User, Member y,
-    si hay datos suficientes, el BodyMeasurementLog inicial — mismo
-    orden de efectos que el flujo del panel (Agregar Miembro + primera
-    Actualización de datos fitness)."""
+    """Ejecuta el plan de build_plan(): crea User, Member y, si hay datos suficientes, el BodyMeasurementLog inicial."""
 
     user = User(
         username=payload["correo"],
@@ -306,17 +278,12 @@ def apply_plan(payload):
     return member
 
 
-# Nunca se tocan en una actualización: start_date es inmutable una vez
-# creado el miembro (regla de negocio), y las credenciales de acceso
-# (User.password/must_change_password/email) solo cambian por el flujo
-# dedicado de "Generar nueva contraseña" del panel, no por este script.
+# * Campos que nunca se tocan en una actualización: start_date es inmutable una vez creado el miembro.
 UPDATE_PROTECTED_FIELDS = {"start_date"}
 
 
 def compute_diff(member, payload):
-    """Compara member_fields/circunferencias/peso del payload contra los
-    valores ya guardados en `member`. No escribe nada — devuelve
-    (diffs: {campo: (viejo, nuevo)}, necesita_medicion_nueva: bool)."""
+    """Compara el payload contra los valores guardados en `member`. No escribe nada; devuelve (diffs, necesita_medicion_nueva)."""
 
     diffs = {}
     for field, new_value in {**payload["member_fields"], **payload["circumferences"]}.items():
@@ -350,11 +317,7 @@ def describe_diff(diffs, needs_new_measurement, payload):
 
 
 def apply_update(member, payload, diffs, needs_new_measurement):
-    """Aplica lo que ya calculó compute_diff(): actualiza solo los
-    campos que cambiaron y, si corresponde, agrega un BodyMeasurementLog
-    nuevo (nunca sobreescribe uno existente en la misma fecha) — mismo
-    patrón que 'Actualizar datos fitness' del panel, incluida la dieta
-    automática si es el primer peso real que se le registra."""
+    """Aplica el diff de compute_diff(): actualiza los campos cambiados y agrega un BodyMeasurementLog nuevo si corresponde."""
 
     is_first_weight = needs_new_measurement and not member.nutrition_plans.exists()
 
@@ -427,9 +390,7 @@ class Command(BaseCommand):
         except json.JSONDecodeError as exc:
             raise CommandError(f"JSON inválido en {json_path}: {exc}") from exc
 
-        # El archivo real es un objeto con metadata (generado, criterio_de_alta,
-        # resumen, unidades) + la lista de participantes bajo "participantes" —
-        # no una lista plana.
+        # Soporta tanto una lista plana como un objeto con metadata y la lista bajo "participantes".
         records = data["participantes"] if isinstance(data, dict) else data
 
         modo = "EJECUTAR (escribiendo en la base)" if ejecutar else "DRY-RUN (no se escribe nada)"
@@ -441,11 +402,7 @@ class Command(BaseCommand):
             nombre = record.get("nombre_completo", "")
             notas_salud = record.get("notas_salud") or ""
 
-            # El JSON puede traer "accion" ("crear"/"actualizar"/"sin cambios"/
-            # "pendiente") — cuando viene, es la fuente de verdad y manda por
-            # encima de crear_cuenta/--actualizar (el coach ya decidió qué
-            # hacer con cada quien). Si no viene (JSON más viejo), se cae al
-            # comportamiento legado basado en crear_cuenta + --actualizar.
+            # * "accion", cuando viene, manda por encima de crear_cuenta/--actualizar; si no viene, se usa ese comportamiento legado.
             accion = record.get("accion")
 
             if accion in ("sin cambios", "pendiente"):

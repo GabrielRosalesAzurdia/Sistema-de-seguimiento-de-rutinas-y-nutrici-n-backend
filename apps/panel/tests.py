@@ -23,9 +23,7 @@ class AddOneMonthTests(TestCase):
 
 
 class MemberCreateViewTests(TestCase):
-    """Feedback: al crear un miembro no se creaba su User (no podía
-    loguearse en la app) — ahora el panel lo crea con contraseña
-    autogenerada, mostrada una sola vez."""
+    """* Al crear un miembro, el panel debe crearle también su User con contraseña autogenerada."""
 
     def setUp(self):
         self.coach = User.objects.create_user(
@@ -53,10 +51,7 @@ class MemberCreateViewTests(TestCase):
 
 
 class MemberFormMetaLabelsAndHelpTests(TestCase):
-    """Feedback: el coach llenó `planned_training_days` sin ver que la
-    meta es del período (mensual), no semanal — el template no
-    renderizaba el help_text. Ahora la etiqueta lo aclara y el
-    help_text (canónico, en el modelo) se muestra bajo el input."""
+    """Las etiquetas y el help_text del form deben aclarar que la meta es del período, no semanal."""
 
     def setUp(self):
         self.coach = User.objects.create_user(
@@ -88,8 +83,7 @@ class MemberFormMetaLabelsAndHelpTests(TestCase):
 
 
 class StudyDataRangeValidationTests(TestCase):
-    """La pantalla 'Datos del estudio' avisa cuando el rango es inválido
-    (inicio posterior al fin) en vez de mostrar una tabla vacía."""
+    """'Datos del estudio' avisa cuando el rango es inválido en vez de mostrar una tabla vacía."""
 
     def setUp(self):
         self.coach = User.objects.create_user(
@@ -143,11 +137,7 @@ class MarkPaidRecalculatesNextPaymentTests(TestCase):
 
 
 class DashboardActivityScopedToCurrentMonthTests(TestCase):
-    """Feedback: 'days_with_log' del widget de actividad reciente contaba
-    todo el histórico de DailyNutritionLog contra una meta mensual
-    (planned_nutrition_days), así que un miembro con varios meses de
-    antigüedad siempre se veía muy por encima de su meta. Ahora solo
-    cuenta los registros del mes calendario en curso."""
+    """* 'days_with_log' del widget de actividad reciente solo cuenta registros del mes calendario en curso."""
 
     def setUp(self):
         self.coach = User.objects.create_user(
@@ -186,13 +176,7 @@ class DashboardActivityScopedToCurrentMonthTests(TestCase):
 
 
 class NutritionPlanSupersedeTests(TestCase):
-    """Feedback prueba E2E v3: al aprobar un plan sucesor, el plan
-    viejo se quedaba con status=APPROVED para siempre (solo
-    is_current pasaba a False), así que aparecía duplicado en
-    'Aprobadas y en Seguimiento', y "Rechazarlo" disparaba otra
-    generación automática, acumulando planes 'activos' para el mismo
-    miembro. Ahora el plan viejo pasa a status=SUPERSEDED y su
-    detalle queda de solo lectura."""
+    """* Al aprobar un plan sucesor, el plan viejo debe pasar a status=SUPERSEDED y quedar de solo lectura."""
 
     def setUp(self):
         self.coach = User.objects.create_user(

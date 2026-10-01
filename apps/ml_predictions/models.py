@@ -3,30 +3,20 @@ from apps.members.models import Member
 
 
 class MLPrediction(models.Model):
-    """
-    Predicción de progreso hacia la meta del usuario, generada con los
-    modelos scikit-learn (LinearRegression / RandomForestRegressor)
-    descritos en el Marco Metodológico del anteproyecto. Alimenta el
-    indicador "DIAS PARA META" del dashboard y, opcionalmente, la
-    generación de un NutritionPlan.
-    """
+    """Predicción de progreso hacia la meta del usuario (scikit-learn),
+    alimenta el indicador "DIAS PARA META" del dashboard."""
 
     class ModelType(models.TextChoices):
         LINEAR_REGRESSION = "LINEAR_REGRESSION", "Regresión Lineal"
         RANDOM_FOREST = "RANDOM_FOREST", "Random Forest Regressor"
-        # Estimación determinística de respaldo que corre cuando el
-        # artefacto .joblib no está disponible en disco (ver
-        # apps/ml_predictions/services.py::predict_days_to_goal). Se
-        # guarda con su propia etiqueta para no confundir en los
-        # reportes una heurística con una salida del modelo entrenado.
+        # Respaldo determinístico cuando no hay artefacto .joblib en disco.
         HEURISTIC_PLACEHOLDER = "HEURISTIC_PLACEHOLDER", "Heurística de respaldo"
 
     member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="ml_predictions")
     model_type = models.CharField(max_length=30, choices=ModelType.choices)
     model_version = models.CharField(max_length=50, default="v1")
 
-    # Features usadas como insumo (ver ml/training/ para el detalle
-    # de ingeniería de características)
+    # Features usadas como insumo del modelo.
     input_features = models.JSONField(
         help_text="Snapshot de las variables usadas: edad, IMC, nivel de "
                    "actividad, % constancia entrenamiento, % constancia "

@@ -18,9 +18,8 @@ from .services import (
 
 
 class ProgressPredictionDedupTests(TestCase):
-    """Feedback: cada carga del dashboard creaba una fila MLPrediction
-    nueva (el GET usaba `.create()` sin caché) — ahora reutiliza la
-    predicción del día si ya existe una."""
+    """El GET reutiliza la predicción del día si ya existe una, en vez
+    de crear una fila MLPrediction nueva por cada carga."""
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -44,10 +43,8 @@ class ProgressPredictionDedupTests(TestCase):
 
 
 class RecentAdherenceTests(TestCase):
-    """`compute_recent_adherence` reemplaza las constantes fijas 12 y 30
-    del cálculo de constancia por los denominadores reales del estudio:
-    `Member.planned_training_days` y los "días activos en el sistema"
-    (misma lógica que VD2, vía `member_active_window`)."""
+    """`compute_recent_adherence` usa `Member.planned_training_days` y
+    los días activos en el sistema (misma lógica que VD2) como denominadores."""
 
     def _member(self, *, planned_training_days=20, activated_days_ago=None):
         user = User.objects.create_user(
@@ -105,7 +102,7 @@ class RecentAdherenceTests(TestCase):
         self.assertEqual(training, 0.0)
 
     def test_nutrition_adherence_uses_active_days_for_recently_activated_member(self):
-        # Alta hace 4 días -> 5 días activos (día de alta incluido), no 30.
+        # Alta hace 4 días -> 5 días activos (día de alta incluido).
         member = self._member(activated_days_ago=4)
         for i in range(2):
             DailyNutritionLog.objects.create(
@@ -124,10 +121,8 @@ class RecentAdherenceTests(TestCase):
         self.assertEqual(nutrition, 1.0)
 
     def test_two_sessions_same_day_count_as_one_recent_workout(self):
-        """Igual que en apps.tracking: "Workout"/"ABS" del catálogo no
-        tienen día asignado, así que un miembro puede registrar la rutina
-        del día y una de esas el mismo día. No debe inflar la constancia
-        reciente que alimenta "días para meta"."""
+        """Dos sesiones registradas el mismo día cuentan como un solo
+        día de constancia, no deben inflar el resultado."""
         member = self._member(planned_training_days=4)
         routine_a = Routine.objects.create(category=RoutineCategory.PECHO)
         routine_b = Routine.objects.create(category=RoutineCategory.CARDIO)
@@ -138,12 +133,8 @@ class RecentAdherenceTests(TestCase):
 
 
 class MinSessionsForPredictionTests(TestCase):
-    """Con pocas sesiones registradas, el denominador de constancia es
-    casi cero y tanto la heurística como el Random Forest entrenado
-    (misma fórmula, ver ml/training/generate_synthetic_data.py) disparan
-    el resultado a cifras de años. Por debajo de
-    MIN_SESSIONS_FOR_RELIABLE_PREDICTION sesiones registradas en total,
-    predicted_days_to_goal debe ser None en vez de un número absurdo."""
+    """Por debajo de MIN_SESSIONS_FOR_RELIABLE_PREDICTION, predicted_days_to_goal
+    debe ser None en vez de un número absurdo."""
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -172,9 +163,8 @@ class MinSessionsForPredictionTests(TestCase):
         self.assertIsNone(result["days_to_goal"])
 
     def test_at_threshold_returns_int_capped_at_max(self):
-        """A partir del umbral de sesiones se devuelve un entero, pero
-        acotado por MAX_DAYS_TO_GOAL (365): constancia 0.1 + 12 kg de
-        diferencia dispararía la fórmula muy por encima de un año."""
+        """A partir del umbral de sesiones se devuelve un entero,
+        acotado por MAX_DAYS_TO_GOAL."""
         self._log_sessions(MIN_SESSIONS_FOR_RELIABLE_PREDICTION)
         result = predict_days_to_goal(self.member, 0.1, 0.1)
         self.assertIsInstance(result["days_to_goal"], int)
@@ -182,10 +172,8 @@ class MinSessionsForPredictionTests(TestCase):
         self.assertLessEqual(result["days_to_goal"], MAX_DAYS_TO_GOAL)
 
     def test_heuristic_branch_is_also_capped(self):
-        """El tope se aplica sobre el resultado final, así que cubre la
-        rama de la heurística de respaldo (modelo .joblib ausente), no
-        solo la del Random Forest. 12 kg / constancia 0.05 -> 840 días
-        crudos, que se acotan a MAX_DAYS_TO_GOAL (365)."""
+        """El tope se aplica también a la rama heurística (modelo
+        .joblib ausente), no solo al Random Forest."""
         self._log_sessions(MIN_SESSIONS_FOR_RELIABLE_PREDICTION)
         with patch("apps.ml_predictions.services._load_model", return_value=None):
             result = predict_days_to_goal(self.member, 0.05, 0.05)
@@ -201,11 +189,8 @@ class MinSessionsForPredictionTests(TestCase):
         self.assertIsNone(response.data["predicted_days_to_goal"])
 
     def test_crossing_threshold_same_day_recalculates_instead_of_reusing_null_cache(self):
-        """Feedback: si la fila del día quedaba en null, el caché de 'una
-        predicción por día' la reutilizaba tal cual — un miembro que
-        cruzaba el umbral de sesiones a mitad del día seguía viendo el
-        guion hasta el día siguiente. Debe recalcular y actualizar esa
-        misma fila en vez de crear una nueva."""
+        """Si la fila del día quedó en null, debe recalcularse y
+        actualizar esa misma fila en vez de reutilizar el null."""
         client = APIClient()
         client.force_authenticate(self.user)
 

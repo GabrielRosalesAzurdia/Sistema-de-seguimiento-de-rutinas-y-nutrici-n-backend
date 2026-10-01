@@ -17,8 +17,7 @@ from .services import (
 
 
 class WorkoutStreakAndCaloriesTests(TestCase):
-    """Track F.3 — cálculo puro de racha/calorías, la regla más fácil
-    de romper sin darse cuenta al tocar WorkoutSessionLog."""
+    """Cálculo puro de racha y calorías totales a partir de WorkoutSessionLog."""
 
     def setUp(self):
         user = User.objects.create_user(
@@ -71,8 +70,7 @@ class WorkoutStreakAndCaloriesTests(TestCase):
 
 
 class IsCoachPermissionTests(TestCase):
-    """Límites de permisos (common/permissions.py, Track E.1): un
-    miembro normal no debe poder entrar a endpoints coach-only."""
+    """Un miembro normal no debe poder entrar a endpoints coach-only."""
 
     def setUp(self):
         self.coach = User.objects.create_user(
@@ -106,8 +104,8 @@ class IsCoachPermissionTests(TestCase):
 
 
 class StudyRangeValidationTests(TestCase):
-    """Antes, un rango con start > end devolvía un reporte vacío
-    indistinguible de 'sin actividad'. Ahora se valida en la entrada."""
+    """Un rango con start > end se rechaza en vez de devolver un
+    reporte vacío indistinguible de "sin actividad"."""
 
     def test_parse_study_range_rejects_inverted_range(self):
         with self.assertRaises(InvalidStudyRange):
@@ -143,10 +141,8 @@ class StudyRangeValidationTests(TestCase):
 
 
 class CaloriesBurnedDerivedFromRoutineTests(TestCase):
-    """Feedback: calories_burned se quedaba en NULL/0 porque nada lo
-    derivaba de la rutina completada — ahora el serializer lo fuerza
-    desde `routine.estimated_calories`, ignorando lo que mande el
-    cliente."""
+    """El serializer fuerza calories_burned desde `routine.estimated_calories`,
+    ignorando lo que mande el cliente."""
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -172,9 +168,8 @@ class CaloriesBurnedDerivedFromRoutineTests(TestCase):
 
 
 class StudyMetricsPlannedDaysTests(TestCase):
-    """VD1 no cambió en la ronda de feedback v4: el denominador sigue
-    siendo la meta individual (planned_training_days) que define el
-    coach, sin tope al 100% si el miembro la supera."""
+    """VD1 usa planned_training_days como denominador, sin tope al
+    100% si el miembro la supera."""
 
     def setUp(self):
         user = User.objects.create_user(
@@ -215,8 +210,6 @@ class StudyMetricsPlannedDaysTests(TestCase):
         self.assertEqual(row["vd1"], 150.0)
 
     def test_deactivated_member_is_excluded_from_metrics(self):
-        # Feedback prueba E2E v3: un miembro desactivado seguía
-        # contando para VD1/VD2 aunque ya no forme parte del gimnasio.
         self.member.is_active = False
         self.member.save(update_fields=["is_active"])
         metrics = compute_study_metrics()
@@ -224,13 +217,9 @@ class StudyMetricsPlannedDaysTests(TestCase):
 
 
 class StudyMetricsVD2ActiveDaysTests(TestCase):
-    """Feedback prueba E2E v4: el Anteproyecto (Capítulo I) define el
-    denominador de VD2 como "días activos en el sistema", no la meta
-    individual planned_nutrition_days (esa sigue siendo el denominador
-    de VD1 únicamente). Día activo = desde
-    max(start_date, created_at) hasta el cutoff del rango (hoy si no
-    hay fin, o el fin si ya pasó), acotado siempre al rango
-    solicitado."""
+    """VD2 usa "días activos en el sistema" como denominador: desde
+    max(start_date, created_at) hasta el cutoff del rango, acotado al
+    rango solicitado."""
 
     def setUp(self):
         user = User.objects.create_user(
@@ -296,11 +285,9 @@ class StudyMetricsVD2ActiveDaysTests(TestCase):
 
 
 class StudyMetricsSecondaryIndicatorsTests(TestCase):
-    """6 indicadores secundarios de la matriz operacional (feedback
-    prueba E2E v4), calculados sobre la MISMA ventana [comp_start,
-    cutoff] que ya delimita "días activos" de VD2 — así que un
-    miembro que se unió a mitad del rango solicitado ve sus
-    semanas/mitades contadas desde su propia fecha de activación."""
+    """Los 6 indicadores secundarios usan la misma ventana [comp_start,
+    cutoff] de VD2: un miembro que se unió a mitad del rango cuenta sus
+    semanas/mitades desde su propia fecha de activación."""
 
     def setUp(self):
         user = User.objects.create_user(
@@ -391,10 +378,8 @@ class StudyMetricsSecondaryIndicatorsTests(TestCase):
 
 
 class VD1DistinctDayDedupTests(TestCase):
-    """"Workout"/"ABS" (catálogo, sin día asignado en el calendario) se
-    pueden registrar el mismo día que la rutina programada. Antes eso
-    sumaba 2 sesiones a VD1/frecuencia semanal/variación por un solo día
-    de esfuerzo real; ahora se cuentan días distintos, no filas."""
+    """VD1/frecuencia semanal/variación cuentan días distintos con
+    sesión, no filas: dos rutinas el mismo día cuentan una sola vez."""
 
     def setUp(self):
         user = User.objects.create_user(
@@ -445,8 +430,8 @@ class VD1DistinctDayDedupTests(TestCase):
 
 
 class WorkoutHistoryEndpointTests(TestCase):
-    """Pantalla 'Historial' de la app (Track de historial, feature nueva):
-    endpoint de solo lectura, propio del miembro autenticado, paginado."""
+    """Pantalla 'Historial' de la app: endpoint de solo lectura, propio
+    del miembro autenticado, paginado."""
 
     def setUp(self):
         self.user = User.objects.create_user(

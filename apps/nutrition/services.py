@@ -1,17 +1,4 @@
-"""
-Generación automática de planes de nutrición por cálculo determinístico.
-
-El plan lo calcula una heurística determinística (Mifflin-St Jeor +
-multiplicador de actividad + reparto de macros por objetivo). **No
-interviene ningún modelo de aprendizaje automático**: no hay un modelo
-de nutrición entrenado y `NutritionPlan.ml_prediction` nunca se asigna.
-El plan se marca con `generated_by_ml=True` solo para distinguir los
-planes generados automáticamente de los creados a mano (el nombre del
-campo se conserva por compatibilidad con la app ya publicada). El coach
-siempre revisa/aprueba antes de que el plan llegue al miembro, y llena
-las sugerencias de platillo al 100% — la heurística nunca toca esos
-campos de texto.
-"""
+"""Generación automática de planes de nutrición: Mifflin-St Jeor + multiplicador de actividad + reparto de macros por objetivo. El coach siempre revisa/aprueba antes de que el plan llegue al miembro y llena las sugerencias de platillo a mano."""
 from apps.members.models import ActivityLevel, FitnessGoal, Gender
 from .models import MealSuggestion, MealTime, NutritionPlan, NutritionPlanStatus
 
@@ -22,8 +9,7 @@ ACTIVITY_MULTIPLIERS = {
     ActivityLevel.MUY_ACTIVO: 1.725,
 }
 
-# "Tonificar" recibe el mismo trato que "Perder peso" (decisión de
-# negocio ya cerrada, ver CLAUDE.md).
+# * "Tonificar" recibe el mismo trato que "Perder peso".
 GOAL_CALORIE_FACTORS = {
     FitnessGoal.PERDER_PESO: 0.80,
     FitnessGoal.TONIFICAR: 0.80,
@@ -39,11 +25,7 @@ GOAL_MACRO_SPLIT = {
     FitnessGoal.GANAR_PESO: (0.25, 0.50, 0.25),
 }
 
-# % de calorías/macros repartido entre los 5 tiempos de comida. El
-# último tiempo (Cena) se calcula por remanente exacto en
-# generate_plan_for_member para que la suma siempre cuadre con el
-# total del plan (los campos son PositiveSmallIntegerField, sin
-# decimales).
+# % de calorías/macros por tiempo de comida; el último (Cena) se calcula por remanente para que la suma cuadre exacto.
 MEAL_TIME_SPLIT = [
     (MealTime.DESAYUNO, 0.20),
     (MealTime.REFACCION_I, 0.10),
@@ -75,10 +57,7 @@ def _bmr(member):
 
 
 def generate_plan_for_member(member) -> NutritionPlan:
-    """Genera (o devuelve, si ya existe uno) un NutritionPlan pendiente
-    de revisión para el miembro, con sus 5 MealSuggestion (macros
-    calculados, sugerencias de platillo vacías para que el coach las
-    llene). Lanza IncompleteProfileError si faltan datos físicos."""
+    """Genera (o devuelve, si ya existe uno) un NutritionPlan pendiente con sus 5 MealSuggestion. Lanza IncompleteProfileError si faltan datos físicos."""
     existing_pending = member.nutrition_plans.filter(
         status=NutritionPlanStatus.PENDING_REVIEW
     ).order_by("-created_at").first()
@@ -102,9 +81,6 @@ def generate_plan_for_member(member) -> NutritionPlan:
     plan = NutritionPlan.objects.create(
         member=member,
         status=NutritionPlanStatus.PENDING_REVIEW,
-        # Plan generado automáticamente por esta heurística determinística
-        # (no por un modelo de ML). El campo mantiene el nombre legado
-        # `generated_by_ml` porque lo consume la app ya publicada.
         generated_by_ml=True,
         is_current=False,
         total_calories=total_calories,

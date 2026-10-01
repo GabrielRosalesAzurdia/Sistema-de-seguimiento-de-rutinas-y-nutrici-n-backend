@@ -34,14 +34,7 @@ class MemberAdminSerializer(serializers.ModelSerializer):
 
 
 class MemberAppSerializer(serializers.ModelSerializer):
-    """
-    Serializer de solo lectura para la app móvil (pantalla Perfil).
-
-    IMPORTANTE: no incluye email/telefono (solo panel admin, ver
-    Cuestionario Requerimientos 2, nota post reunión) y el peso /
-    medidas corporales son de SOLO LECTURA: el usuario no puede
-    editarlas desde la app, únicamente el coach vía panel admin.
-    """
+    """Solo lectura para la app (pantalla Perfil). Sin email/teléfono; peso y medidas no son editables desde la app."""
 
     full_name = serializers.ReadOnlyField()
     imc = serializers.ReadOnlyField()
@@ -75,12 +68,7 @@ class MemberAppSerializer(serializers.ModelSerializer):
 
 
 class MemberAppEditableSerializer(serializers.ModelSerializer):
-    """
-    Subconjunto de campos que el usuario SÍ puede editar desde la
-    app (pantalla 'Editar Perfil'): nombre, edad, altura y meta/nivel
-    de actividad. Peso y medidas corporales quedan explícitamente
-    fuera por decisión de negocio.
-    """
+    """Campos editables desde 'Editar Perfil' en la app: nombre, edad, altura y meta/nivel de actividad. Sin peso ni medidas."""
 
     class Meta:
         model = Member

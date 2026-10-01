@@ -1,31 +1,11 @@
-"""
-Cálculo de % de grasa y % de agua corporal a partir de las medidas
-que el coach registra mensualmente (ver CLAUDE.md sección 8, punto 7:
-"el sistema debe calcular" estos valores, fórmula pendiente de
-implementar).
-
-Fórmula de % de grasa: U.S. Navy Method (Hodgdon & Beckett, 1984),
-variante métrica (cm). Requiere cintura y cuello para hombres, más
-cadera para mujeres.
-
-Fórmula de % de agua corporal: no existe un método Navy estándar para
-esto. Se usa una estimación derivada del % de grasa corporal, a partir
-de que la masa corporal magra (100% - % grasa) contiene
-aproximadamente 73% de agua en un adulto sano (Pace & Rathbun, 1945;
-cifra ampliamente citada en literatura de composición corporal). Es
-una aproximación, no una medición directa (ej. bioimpedancia) —
-documentado así para la sección de Análisis y Diseño de la tesis.
-"""
+"""Cálculo de % de grasa (U.S. Navy Method, Hodgdon & Beckett 1984) y % de agua corporal a partir de las medidas que registra el coach."""
 import math
 
 LEAN_MASS_WATER_FACTOR = 0.73
 
 
 def calculate_body_fat_percentage(*, gender, waist_cm, neck_cm, height_cm, hip_cm=None):
-    """
-    Devuelve el % de grasa corporal (U.S. Navy Method) o None si faltan
-    medidas requeridas para la fórmula.
-    """
+    """Devuelve el % de grasa corporal (U.S. Navy Method) o None si faltan medidas requeridas."""
     if not (gender and waist_cm and neck_cm and height_cm):
         return None
 
@@ -67,10 +47,7 @@ def calculate_body_fat_percentage(*, gender, waist_cm, neck_cm, height_cm, hip_c
 
 
 def calculate_body_water_percentage(body_fat_percentage):
-    """
-    Estimación de % de agua corporal a partir del % de grasa ya
-    calculado. Ver nota de la fórmula en el docstring del módulo.
-    """
+    """Estima % de agua corporal a partir del % de grasa ya calculado (masa magra ≈ 73% agua)."""
     if body_fat_percentage is None:
         return None
     lean_mass_percentage = 100 - float(body_fat_percentage)
@@ -78,10 +55,7 @@ def calculate_body_water_percentage(body_fat_percentage):
 
 
 def calculate_body_composition(member):
-    """
-    Calcula (% grasa, % agua) para un Member a partir de sus medidas
-    actuales. Devuelve (None, None) si faltan medidas requeridas.
-    """
+    """Calcula (% grasa, % agua) para un Member; devuelve (None, None) si faltan medidas requeridas."""
     body_fat = calculate_body_fat_percentage(
         gender=member.gender,
         waist_cm=member.waist_cm,

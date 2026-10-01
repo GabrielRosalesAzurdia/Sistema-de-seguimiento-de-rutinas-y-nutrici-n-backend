@@ -1,14 +1,6 @@
 from django.db import migrations
 
-# Calendario semanal real del gimnasio (confirmado con el desarrollador
-# a cargo, no es un supuesto). Sábado/domingo quedan sin fila = sin
-# rutina asignada ese día (descanso), no un error.
-#
-# Nota: la regla de negocio dice "Pierna" sin especificar Cuádriceps vs
-# Glúteos (el catálogo tiene ambas categorías) — se asume
-# PIERNA_CUADRICEPS como default razonable; el coach puede corregirlo
-# desde el panel admin una vez construido (Track E.3) si prefiere
-# Glúteos en algún día.
+# * Calendario semanal real del gimnasio. Sábado/domingo sin fila = día de descanso, no un error.
 SCHEDULE = [
     # (day_of_week, gender, category)
     (0, "HOMBRE", "PECHO"),              # Lunes

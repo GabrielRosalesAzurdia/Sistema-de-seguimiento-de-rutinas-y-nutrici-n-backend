@@ -16,8 +16,7 @@ def _make_user(email):
 
 
 class NavyMethodFormulaTests(TestCase):
-    """Lógica de cálculo pura (Track C) — fácil de romper sin darse
-    cuenta si se toca la fórmula o el orden de los parámetros."""
+    """Verifica la fórmula U.S. Navy Method y el orden de sus parámetros."""
 
     def test_missing_neck_cm_returns_none(self):
         result = calculate_body_fat_percentage(
@@ -45,8 +44,7 @@ class NavyMethodFormulaTests(TestCase):
 
 
 class MemberSaveAutoCalculationTests(TestCase):
-    """Member.save() debe calcular automáticamente cuando hay medidas
-    suficientes, y NUNCA sobreescribir con None cuando faltan."""
+    """Member.save() calcula automáticamente con medidas suficientes y nunca sobreescribe con None si faltan."""
 
     def test_save_computes_body_composition_when_measurements_present(self):
         member = Member.objects.create(
@@ -97,10 +95,7 @@ def _base_participant_record(**overrides):
 
 
 class AltaParticipantesBuildPlanTests(TestCase):
-    """build_plan() no toca la base — cubre el mapeo de campos del JSON
-    del estudio contra Member, incluidas las ambigüedades resueltas con
-    el coach (dias_entreno semanal vs. mensual, nombres sin 4 palabras,
-    enums no reconocidos)."""
+    """build_plan() no escribe en la base: mapea campos del JSON de participantes a Member."""
 
     def test_four_word_name_splits_into_the_four_member_fields(self):
         payload, warnings = build_plan(_base_participant_record())
@@ -199,10 +194,7 @@ class AltaParticipantesBuildPlanTests(TestCase):
 
 
 class AltaParticipantesApplyPlanTests(TestCase):
-    """apply_plan() sí escribe — cubre RNF06 (must_change_password) y
-    que la medición inicial + circunferencias queden donde el modelo
-    real las espera (Member = snapshot actual, BodyMeasurementLog =
-    historial de peso, sin las circunferencias)."""
+    """apply_plan() escribe en la base: crea el User/Member y la medición inicial en BodyMeasurementLog."""
 
     def test_apply_plan_creates_user_with_must_change_password(self):
         payload, _ = build_plan(_base_participant_record())
@@ -223,8 +215,7 @@ class AltaParticipantesApplyPlanTests(TestCase):
 
 
 class AltaParticipantesCommandTests(TestCase):
-    """Corrida end-to-end del management command contra un JSON chico,
-    igual al que se usará con el JSON real de participantes."""
+    """Corrida end-to-end del management command contra un JSON de participantes."""
 
     def _write_json(self, records):
         tmp = tempfile.NamedTemporaryFile(
@@ -275,9 +266,7 @@ class AltaParticipantesCommandTests(TestCase):
         self.assertEqual(rows[0]["resultado"], "omitido")
 
     def test_crear_cuenta_true_but_no_consentimiento_is_skipped(self):
-        """Caso real detectado en el JSON del estudio: alguien marcado
-        crear_cuenta=true pero sin consentimiento firmado todavía — no
-        se crea la cuenta aunque crear_cuenta lo permita."""
+        """crear_cuenta=true no basta: sin consentimiento firmado, la cuenta no se crea."""
         json_path = self._write_json([
             _base_participant_record(
                 correo_app="sin.firma@test.com", crear_cuenta=True, consentimiento=False,
@@ -295,9 +284,7 @@ class AltaParticipantesCommandTests(TestCase):
         self.assertIn("consentimiento", rows[0]["detalle"])
 
     def test_real_json_top_level_object_with_participantes_key_is_supported(self):
-        """El JSON real del estudio no es una lista plana: es un objeto
-        con metadata (generado, criterio_de_alta, resumen, unidades) y
-        la lista bajo la clave "participantes"."""
+        """Soporta un JSON con metadata y la lista de participantes bajo la clave "participantes"."""
         json_path = self._write_json({
             "generado": "2026-09-12",
             "criterio_de_alta": "texto libre",
@@ -317,10 +304,7 @@ class AltaParticipantesCommandTests(TestCase):
 
 
 class AltaParticipantesActualizarTests(TestCase):
-    """--actualizar: para correos que ya existen, sincroniza los campos
-    que cambiaron en el JSON. Caso real que motivó esto: el JSON de
-    participantes se corrigió después del alta inicial (ej. una meta de
-    peso mal cargada, medidas que llegaron después)."""
+    """--actualizar: para correos que ya existen, sincroniza los campos que cambiaron en el JSON."""
 
     def _write_json(self, records):
         tmp = tempfile.NamedTemporaryFile(
@@ -463,10 +447,7 @@ class AltaParticipantesActualizarTests(TestCase):
 
 
 class AltaParticipantesAccionFieldTests(TestCase):
-    """El JSON real empezó a traer "accion" ("crear"/"actualizar"/
-    "sin cambios"/"pendiente") — cuando viene, manda por encima de
-    crear_cuenta y de la bandera --actualizar (el coach ya decidió qué
-    hacer con cada participante)."""
+    """El campo "accion" ("crear"/"actualizar"/"sin cambios"/"pendiente"), cuando viene, manda por encima de crear_cuenta y --actualizar."""
 
     def _write_json(self, records):
         tmp = tempfile.NamedTemporaryFile(
