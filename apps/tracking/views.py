@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from common.permissions import IsCoach, IsOwnerOrCoach
 from apps.members.models import Member
 from .models import WorkoutSessionLog, WorkoutExerciseEntry, DailyNutritionLog, BodyMeasurementLog
+from .daily_export import build_daily_workbook, build_key_rows
 from .serializers import (
     WorkoutSessionLogSerializer, WorkoutSessionHistorySerializer,
     DailyNutritionLogSerializer, BodyMeasurementLogSerializer,
@@ -155,4 +156,42 @@ class StudyExportView(views.APIView):
                 m["vd2_weekly_freq"], m["vd2_weeks_min_pct"], m["vd2_variation"] if m["vd2_variation"] is not None else "",
             ])
 
+        return response
+
+
+class StudyDailyExportView(views.APIView):
+    """Exportación diaria por participante (.xlsx para las fichas de
+    observación). Solo códigos P01..., sin nombres: la clave va aparte."""
+    permission_classes = [IsCoach]
+    authentication_classes = [JWTAuthentication, SessionAuthentication]
+
+    def get(self, request):
+        try:
+            content = build_daily_workbook(
+                request.query_params.get("start") or None,
+                request.query_params.get("end") or None,
+            )
+        except InvalidStudyRange as exc:
+            return HttpResponse(str(exc), status=400, content_type="text/plain; charset=utf-8")
+
+        response = HttpResponse(
+            content,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = 'attachment; filename="estudio_diario.xlsx"'
+        return response
+
+
+class StudyKeyExportView(views.APIView):
+    """clave_participantes.csv: código, nombre, fecha de alta y estado.
+    Se descarga aparte del .xlsx diario."""
+    permission_classes = [IsCoach]
+    authentication_classes = [JWTAuthentication, SessionAuthentication]
+
+    def get(self, request):
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = 'attachment; filename="clave_participantes.csv"'
+        writer = csv.writer(response)
+        writer.writerow(["Código", "Nombre", "Fecha de alta", "Estado"])
+        writer.writerows(build_key_rows())
         return response
